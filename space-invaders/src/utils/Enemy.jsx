@@ -5,24 +5,21 @@ export default class Enemy {
     this.directionX = 1; // 1 → derecha, -1 → izquierda
   }
 
-  autoMove(setPos) {
-    setPos((prev) => {
-      let newX = prev.x + this.directionX;
-      let newY = prev.y;
+  autoMoveSimple(enemy) {
+    let newX = enemy.x + this.directionX;
+    let newY = enemy.y;
 
-      // Si toca borde izquierdo
-      if (newX < 2) {
-        this.directionX = 1; // cambia a derecha
-        newY = prev.y + 1; // baja una fila
-      }
+    if (newX <= 10) {
+      this.directionX = 1;
+      newX = enemy.x;
+      newY = enemy.y + 1;
+    }
+    if (newX >= 125) {
+      this.directionX = -1;
+      newX = enemy.x;
+      newY = enemy.y + 1;
+    }
 
-      // Si toca borde derecho
-      if (newX > 125) {
-        this.directionX = -1; // cambia a izquierda
-        newY = prev.y + 1; // baja una fila
-      }
-
-      return { ...prev, x: newX, y: newY };
-    });
+    return { ...enemy, x: newX, y: newY };
   }
 }

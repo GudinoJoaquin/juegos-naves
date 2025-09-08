@@ -7,13 +7,21 @@ import enemyShip from "../assets/img/red.png";
 
 export default function Home() {
   const [pos, setPos] = useState({ x: 62, y: 60 });
-  const [enemyPos, setEnemyPos] = useState({ x: 62, y: 10 });
-  const [enemyAlive, setEnemyAlive] = useState(true);
+
+  // varios enemigos
+  const [enemies, setEnemies] = useState(
+    Array.from({ length: 10 }, (_, i) => ({
+      id: i,
+      x: 20 + i * 7,
+      y: 10,
+      alive: true,
+    }))
+  );
 
   const [bullets, setBullets] = useState([]);
 
   const playerOne = useRef(new Player("Gudi"));
-  const enemyOne = useRef(new Enemy("Invader"));
+  const enemyAI = useRef(new Enemy("Invader")); // todos usan la misma lógica
 
   // movimiento jugador
   useEffect(() => {
@@ -24,8 +32,6 @@ export default function Home() {
           ...prev,
           { x: pos.x + 2.6, y: pos.y - 1, id: Date.now() },
         ]);
-      } else {
-        playerOne.current.move(e, setPos);
       }
       playerOne.current.move(e, setPos);
     };
@@ -34,25 +40,26 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [pos]);
 
-  // movimiento enemigo
+  // movimiento enemigos
   useEffect(() => {
-    if (!enemyAlive) return;
-
     const interval = setInterval(() => {
-      enemyOne.current.autoMove(setEnemyPos);
-    }, 500);
+      setEnemies((prevEnemies) =>
+        prevEnemies.map((enemy) =>
+          enemy.alive
+            ? enemyAI.current.autoMoveSimple(enemy) // mover solo si está vivo
+            : enemy
+        )
+      );
+    }, 700);
 
     return () => clearInterval(interval);
-  }, [enemyAlive]);
+  }, []);
 
-  // movimiento balas + colisión
+  // movimiento balas
   useEffect(() => {
     const interval = setInterval(() => {
-      setBullets(
-        (prevBullets) =>
-          prevBullets
-            .map((b) => ({ ...b, y: b.y - 1 })) // mover hacia arriba
-            .filter((b) => b.y >= 0) // eliminar balas fuera de pantalla
+      setBullets((prevBullets) =>
+        prevBullets.map((b) => ({ ...b, y: b.y - 3 })).filter((b) => b.y >= 0)
       );
     }, 100);
 
@@ -61,17 +68,27 @@ export default function Home() {
 
   // detectar colisiones
   useEffect(() => {
-    bullets.forEach((b) => {
-      if (
-        enemyAlive &&
-        Math.abs(b.x - enemyPos.x) < 2 && // tolerancia horizontal
-        Math.abs(b.y - enemyPos.y) < 2 // tolerancia vertical
-      ) {
-        setEnemyAlive(false); // enemigo muere
-        setBullets((prev) => prev.filter((bullet) => bullet.id !== b.id));
-      }
-    });
-  }, [bullets, enemyPos, enemyAlive]);
+    setEnemies((prevEnemies) =>
+      prevEnemies.map((enemy) => {
+        if (!enemy.alive) return enemy;
+
+        const hit = bullets.some(
+          (b) => Math.abs(b.x - enemy.x) < 2 && Math.abs(b.y - enemy.y) < 2
+        );
+
+        if (hit) {
+          setBullets((prev) =>
+            prev.filter(
+              (b) =>
+                !(Math.abs(b.x - enemy.x) < 2 && Math.abs(b.y - enemy.y) < 2)
+            )
+          );
+          return { ...enemy, alive: false };
+        }
+        return enemy;
+      })
+    );
+  }, [bullets]);
 
   return (
     <main className="overflow-x-hidden h-screen bg-black relative">
@@ -79,26 +96,30 @@ export default function Home() {
       <img
         src={playerShip}
         alt="player"
-        className="absolute"
+        className="absolute transition"
         style={{ transform: `translate(${pos.x * 10}px, ${pos.y * 10}px)` }}
       />
 
-      {/* Enemy */}
-      {enemyAlive && (
-        <img
-          src={enemyShip}
-          className="w-10 h-10 absolute transition"
-          style={{
-            transform: `translate(${enemyPos.x * 10}px, ${enemyPos.y * 10}px)`,
-          }}
-        />
+      {/* Enemies */}
+      {enemies.map(
+        (enemy) =>
+          enemy.alive && (
+            <img
+              key={enemy.id}
+              src={enemyShip}
+              className="w-10 h-10 absolute transition"
+              style={{
+                transform: `translate(${enemy.x * 10}px, ${enemy.y * 10}px)`,
+              }}
+            />
+          )
       )}
 
       {/* Bullets */}
       {bullets.map((b) => (
         <div
           key={b.id}
-          className="w-2 h-6 bg-sky-400 absolute"
+          className="w-2 h-6 bg-sky-400 absolute transition"
           style={{ transform: `translate(${b.x * 10}px, ${b.y * 10}px)` }}
         />
       ))}
