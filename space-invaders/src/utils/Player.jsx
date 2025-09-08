@@ -9,7 +9,7 @@ export default class Player {
         case "ArrowLeft":
           return prev.x > 2 ? { ...prev, x: prev.x - 1 } : prev;
         case "ArrowRight":
-          return prev.x < 125 ? { ...prev, x: prev.x + 1 } : prev;
+          return prev.x < 128 ? { ...prev, x: prev.x + 1 } : prev;
         default:
           return prev;
       }
