@@ -1,27 +1,26 @@
-export default class Player {
-  constructor(canvasWidth, canvasHeight) {
-    this.width = 50;
-    this.height = 20;
-    this.x = canvasWidth / 2 - this.width / 2;
-    this.y = canvasHeight - this.height - 10;
-    this.speed = 5;
-    this.color = "lime";
-    this.lives = 3; // vidas
-  }
+import playerImg from "../assets/img/player.png";
 
-  move(direction, canvasWidth) {
-    this.x += direction * this.speed;
-    if (this.x < 0) this.x = 0;
-    if (this.x + this.width > canvasWidth) this.x = canvasWidth - this.width;
+export default class Player {
+  constructor(canvasWidth, canvasHeight, name, invert = false) {
+    this.width = 40;
+    this.height = 30;
+    this.x = canvasWidth / 2 - this.width / 2;
+    this.y = canvasHeight - this.height - 40;
+    this.name = name;
+    this.lives = 3;
+    this.image = new Image();
+    this.image.src = playerImg;
+    this.invert = invert; // <- si es true, invertimos colores
   }
 
   draw(ctx) {
-    ctx.fillStyle = this.color;
-    ctx.fillRect(this.x, this.y, this.width, this.height);
-
-    // Mostrar vidas
-    ctx.fillStyle = "white";
-    ctx.font = "16px Arial";
-    ctx.fillText("Vidas: " + this.lives, 10, 20);
+    if (this.invert) {
+      ctx.save();
+      ctx.filter = "invert(1)";
+      ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+      ctx.restore();
+    } else {
+      ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+    }
   }
 }
