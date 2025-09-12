@@ -22,10 +22,10 @@ export class Projectile {
         this.frameInterval = 100; // ms
     }
 
-    update(deltaTime) {
+    update(deltaTime, game) {
         this.x += this.vx;
         this.y += this.vy;
-        if (this.y < -this.height || this.y > 800 || this.x < -this.width || this.x > 1200) { // Tamaños de canvas asumidos
+        if (this.y < -this.height || this.y > game.canvas.height || this.x < -this.width || this.x > game.canvas.width) {
             this.isDestroyed = true;
         }
 

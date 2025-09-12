@@ -26,6 +26,11 @@ export class Spaceship {
         this.destructionFrame = 0;
         this.destructionFrameCount = this.destructionFrames.length;
         this.destructionFrameInterval = 75; // ms
+
+        // Efecto de escudo
+        this.isShielded = false;
+        this.shieldTimer = 0;
+        this.shieldDuration = 500; // ms
     }
 
     move(dx, dy) {
@@ -40,6 +45,8 @@ export class Spaceship {
     takeDamage(damage) {
         if (this.state !== 'alive') return;
         this.hp -= damage;
+        this.isShielded = true;
+        this.shieldTimer = this.shieldDuration;
         if (this.hp <= 0) {
             this.hp = 0;
             this.state = 'dying';
@@ -54,6 +61,15 @@ export class Spaceship {
                 this.currentFrame = (this.currentFrame + 1) % this.frameCount;
                 this.frameTimer = 0;
             }
+
+            // Actualizar el timer del escudo
+            if (this.isShielded) {
+                this.shieldTimer -= deltaTime;
+                if (this.shieldTimer <= 0) {
+                    this.isShielded = false;
+                }
+            }
+
         } else if (this.state === 'dying') {
             this.frameTimer += deltaTime;
             if (this.frameTimer > this.destructionFrameInterval) {
@@ -112,11 +128,15 @@ export class Spaceship {
                 this.drawThruster(context);
             }
             if (this.animationFrames[this.currentFrame]) {
+                if (this.isShielded) {
+                    context.filter = 'hue-rotate(180deg) brightness(150%) saturate(200%)'; // Filtro azul transparente
+                }
                 context.drawImage(
                     this.animationFrames[this.currentFrame],
                     drawX, drawY, // Dibujar relativo al nuevo origen
                     this.width, this.height
                 );
+                context.filter = 'none'; // Resetear el filtro
             }
         } else if (this.state === 'dying') {
             const frame = this.destructionFrames[this.destructionFrame];

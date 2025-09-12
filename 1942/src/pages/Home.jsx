@@ -28,7 +28,10 @@ async function loadAssets() {
                     loadedAssets[name] = img;
                     resolve();
                 };
-                img.onerror = () => reject(`Error cargando ${config.path}`);
+                img.onerror = () => {
+                    console.error(`Error cargando ${config.path}`);
+                    reject(`Error cargando ${config.path}`);
+                };
             }));
         } else {
             const framePromises = [];
@@ -43,7 +46,10 @@ async function loadAssets() {
                             loadedAssets[name][i - 1] = img;
                             resolve();
                         };
-                        img.onerror = () => reject(`Error cargando ${path}`);
+                        img.onerror = () => {
+                            console.error(`Error cargando ${path}`);
+                            reject(`Error cargando ${path}`);
+                        };
                     })
                 );
             }
