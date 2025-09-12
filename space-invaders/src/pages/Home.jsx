@@ -69,6 +69,9 @@ export default function Home() {
     let enemyDirection = 1;
     let enemyShotChance = 0.001;
 
+    let baseEnemySpeed = 0;
+    let enemySpeed = 0;
+
     // Crear enemigos según nivel, pasando puntos en el constructor
     const createEnemies = (levelIndex) => {
       const rows = 4;
@@ -87,10 +90,12 @@ export default function Home() {
         }
       }
       enemiesRef.current = enemies;
+      baseEnemySpeed = speed;
+      enemySpeed = speed;
       return speed;
     };
 
-    let enemySpeed = createEnemies(level);
+    createEnemies(level);
 
     const handleKeyDown = (e) => {
       keysRef.current[e.key] = true;
@@ -117,6 +122,7 @@ export default function Home() {
       ctx.fillText(`Jugador: ${player.name}`, 20, 25);
       ctx.fillText(`Vidas: ${player.lives}`, 20, 50);
       ctx.fillText(`Nivel: ${level + 1}`, CANVAS_WIDTH - 100, 25);
+      ctx.fillText(`Puntos: ${score}`, CANVAS_WIDTH / 2 - 40, 25);
 
       // Movimiento jugador
       if (keysRef.current["ArrowLeft"]) player.x -= PLAYER_SPEED * dt;
@@ -150,11 +156,18 @@ export default function Home() {
         if (
           enemy.x + enemy.width > CANVAS_WIDTH - HORIZONTAL_MARGIN ||
           enemy.x < HORIZONTAL_MARGIN
-        )
+        ) {
           hitEdge = true;
+        }
       });
+
       if (hitEdge) {
-        enemiesRef.current.forEach((enemy) => (enemy.y += 10));
+        enemiesRef.current.forEach((enemy) => {
+          enemy.y += 10;
+          if (enemy.x < HORIZONTAL_MARGIN) enemy.x = HORIZONTAL_MARGIN;
+          if (enemy.x + enemy.width > CANVAS_WIDTH - HORIZONTAL_MARGIN)
+            enemy.x = CANVAS_WIDTH - HORIZONTAL_MARGIN - enemy.width;
+        });
         enemyDirection = -enemyDirection;
       }
 
@@ -187,6 +200,7 @@ export default function Home() {
       enemyBulletsRef.current = enemyBulletsRef.current.filter((b) => b.active);
 
       // Colisiones balas vs enemigos
+      let beforeCount = enemiesRef.current.length;
       enemiesRef.current = enemiesRef.current.filter((enemy) => {
         let alive = true;
         playerBulletsRef.current.forEach((b) => {
@@ -198,11 +212,19 @@ export default function Home() {
           ) {
             b.active = false;
             alive = false;
-            setScore((prev) => prev + (enemy.points || 0)); // ✅ sumar puntos
+            setScore((prev) => prev + (enemy.points || 0));
           }
         });
         return alive;
       });
+
+      // 👇 Si se mató algún enemigo, recalcular velocidad
+      if (enemiesRef.current.length < beforeCount) {
+        const totalEnemies = 40; // 4 filas x 10 columnas
+        const killed = totalEnemies - enemiesRef.current.length;
+        // Aumentar la velocidad de forma proporcional a los enemigos muertos
+        enemySpeed = baseEnemySpeed * (1 + (killed / totalEnemies) * 2);
+      }
 
       // Colisiones balas vs jugador
       enemyBulletsRef.current.forEach((b) => {
@@ -255,7 +277,7 @@ export default function Home() {
         if (level < ENEMY_LEVELS.length - 1) {
           const nextLevel = level + 1;
           setLevel(nextLevel);
-          enemySpeed = createEnemies(nextLevel);
+          createEnemies(nextLevel);
         } else {
           gameOverRef.current = true;
           alert("¡Ganaste todos los niveles!");
