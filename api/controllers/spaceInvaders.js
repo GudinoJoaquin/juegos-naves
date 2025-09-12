@@ -15,12 +15,11 @@ export async function getUsers(req, res) {
 
   res.status(200).json({ ok: true, data: data });
 }
-
 export async function postUsers(req, res) {
   const { username, points } = req.body;
 
-  if (!username) {
-    return res.status(423).json({ error: "Datos faltantes" });
+  if (!username || points === undefined) {
+    return res.status(422).json({ error: "Datos faltantes" });
   }
 
   const { data, error } = await supabase.from("space-invaders").upsert(
@@ -30,14 +29,18 @@ export async function postUsers(req, res) {
         points: points,
       },
     ],
-    { onConflict: ["username"] }
+    {
+      onConflict: ["username"], // username debe ser UNIQUE en la tabla
+      returning: "representation", // devuelve el registro insertado o actualizado
+    }
   );
 
   if (error) {
+    console.error(error);
     return res.status(500).json({ error: "Error guardando datos" });
   }
 
   console.log(data);
 
-  res.status(200).json({ ok: true, msg: "Guardado correctamente" });
+  res.status(200).json({ ok: true, msg: "Guardado correctamente", data: data });
 }
