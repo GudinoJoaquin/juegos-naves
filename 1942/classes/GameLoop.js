@@ -1,5 +1,9 @@
 import { Player } from './Player.js';
-import { Enemy } from './Enemy.js';
+import { Enemy } from './Enemy.js'; // Base Enemy class
+import { DefaultEnemy } from './DefaultEnemy.js';
+import { TankEnemy } from './TankEnemy.js';
+import { LaserEnemy } from './LaserEnemy.js';
+import { BoostEnemy } from './BoostEnemy.js';
 
 export class GameLoop {
     constructor(canvas, inputHandler, assets) {
@@ -116,9 +120,28 @@ export class GameLoop {
     spawnEnemy() {
         const x = Math.random() * (this.canvas.width - 50);
         const y = -100;
-        const types = ['default', 'laser', 'tank', 'boost'];
-        const type = types[Math.floor(Math.random() * types.length)];
-        this.enemies.push(new Enemy(x, y, type, this.assets, this)); // Pasar 'this' (el juego) al constructor
+        const enemyTypes = ['default', 'laser', 'tank', 'boost'];
+        const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+
+        let newEnemy;
+        switch (type) {
+            case 'default':
+                newEnemy = new DefaultEnemy(x, y, { ...this.assets, enemyDefault: this.assets.enemyBoost }, this); // Force boost sprite
+                break;
+            case 'tank':
+                newEnemy = new TankEnemy(x, y, { ...this.assets, enemyTank: this.assets.enemyBoost }, this); // Force boost sprite
+                break;
+            case 'laser':
+                newEnemy = new LaserEnemy(x, y, { ...this.assets, enemyLaser: this.assets.enemyBoost }, this); // Force boost sprite
+                break;
+            case 'boost':
+                newEnemy = new BoostEnemy(x, y, this.assets, this);
+                break;
+            default:
+                console.error('Unknown enemy type:', type);
+                return;
+        }
+        this.enemies.push(newEnemy);
     }
 
     addProjectile(projectile) {
@@ -157,11 +180,10 @@ export class GameLoop {
         this.enemies.forEach(e => {
             if (e.state === 'alive' && this.player.state === 'alive') {
                 if (this.isColliding(e, this.player)) {
-                    // Los kamikazes se destruyen al chocar
-                    if (e.enemyType === 'default' || e.enemyType === 'tank') {
-                        e.takeDamage(e.hp);
-                    } 
-                    this.player.takeDamage(20); // Daño por colisión
+                    // DefaultEnemy and TankEnemy will handle their own destruction on collision
+                    // The base Enemy class's takeDamage will handle the state change to 'dying'
+                    e.takeDamage(e.hp); // Enemy takes full damage and dies on collision
+                    this.player.takeDamage(20); // Player takes damage from collision
                 }
             }
         });

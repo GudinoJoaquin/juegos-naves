@@ -1,13 +1,13 @@
 import { Projectile } from './Projectile.js';
 
 export class HomingProjectile extends Projectile {
-    constructor(x, y, vx, vy, damage, owner, color, lifetime = 5000, hp = 10) {
+    constructor(x, y, vx, vy, damage, owner, color, speed = 2, lifetime = 5000, hp = 10) {
         // El misil no tiene animación de sprite, así que pasamos un array vacío
         super(x, y, vx, vy, damage, owner, [], color);
 
         this.hp = hp;
         this.lifetime = lifetime; // ms
-        this.speed = 2; // Es lento
+        this.speed = speed; // Usa la velocidad pasada
         this.turnSpeed = 0.05; // Qué tan rápido puede girar
     }
 
