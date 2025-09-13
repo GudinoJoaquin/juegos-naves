@@ -91,10 +91,10 @@ export class Spaceship {
         let thrusterY, y2;
 
         if (this.thrusterDirection === 'down') {
-            thrusterY = (this.height / 2) - 10;
+            thrusterY = (this.height / 2) - 20;
             y2 = thrusterY + thrusterHeight;
         } else { // 'up'
-            thrusterY = (-this.height / 2) + 10;
+            thrusterY = (-this.height / 2) + 20;
             y2 = thrusterY - thrusterHeight;
         }
 
