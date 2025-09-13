@@ -1,11 +1,11 @@
 import { Enemy } from './Enemy.js';
 import { Projectile } from './Projectile.js';
 
-export class BoostEnemy extends Enemy {
+export class AssaultEnemy extends Enemy {
     constructor(x, y, assets, game) {
         const hp = 30;
         const speed = 2.5;
-        const animationFrames = assets['enemyBoost'];
+        const animationFrames = assets['enemyAssault'];
         const scale = 2.0;
         super(x, y, hp, speed, animationFrames, scale, assets, game);
         this.scoreValue = 40;

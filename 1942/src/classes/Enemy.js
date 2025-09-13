@@ -1,14 +1,11 @@
 import { Spaceship } from './Spaceship.js';
-// Projectile imports will be moved to specific enemy classes or kept if needed for a generic enemy projectile
-// import { Projectile } from './Projectile.js';
-// import { LaserProjectile } from './LaserProjectile.js';
-// import { HomingProjectile } from './HomingProjectile.js';
 
 export class Enemy extends Spaceship {
     constructor(x, y, hp, speed, animationFrames, scale, assets, game) {
         super(x, y, hp, speed, animationFrames, scale, 'up', assets); // Enemies generally move up
         this.game = game; // Store game reference for targeting player, etc.
         this.scoreValue = 0; // Default score value, overridden by subclasses
+        this.maxHp = hp;
 
         // --- IA ---
         this.aiState = 'entering'; // Common AI state
@@ -41,7 +38,7 @@ export class Enemy extends Spaceship {
         if (player.state === 'alive') {
             const angleToPlayer = Math.atan2(player.y - this.y, player.x - this.x);
             // Adjust angle to make the spaceship point towards the player (assuming default sprite points up)
-            this.angle = angleToPlayer + Math.PI / 2;
+            this.angle = angleToPlayer - Math.PI / 2;
         }
 
         // Out of bounds check (common for all enemies)
@@ -49,4 +46,31 @@ export class Enemy extends Spaceship {
             this.state = 'dead';
         }
     }
+
+    draw(context) {
+        super.draw(context);
+
+        if (this.state === 'alive') {
+            // Health bar
+            const healthBarWidth = this.width;
+            const healthBarHeight = 5;
+            const healthBarX = this.x;
+            const healthBarY = this.y - 15;
+
+            const healthPercentage = this.hp / this.maxHp;
+
+            context.fillStyle = 'red';
+            context.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+
+            context.fillStyle = 'green';
+            context.fillRect(healthBarX, healthBarY, healthBarWidth * healthPercentage, healthBarHeight);
+
+            // Enemy type name
+            context.fillStyle = 'white';
+            context.font = '12px Arial';
+            context.textAlign = 'center';
+            context.fillText(this.constructor.name, this.x + this.width / 2, this.y - 25);
+        }
+    }
 }
+

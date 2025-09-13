@@ -1,18 +1,18 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { GameLoop } from '../../classes/GameLoop';
-import { InputHandler } from '../../classes/InputHandler';
+import { GameLoop } from '../classes/GameLoop.js';
+import { InputHandler } from '../classes/InputHandler.js';
 
 const assetConfig = {
-    playerAssault: { path: 'src/assets/Player/Assault/1/', frames: 5 },
-    playerLaser: { path: 'src/assets/Player/Laser/1/', frames: 5 },
-    playerTank: { path: 'src/assets/Player/Tank/1/', frames: 5 },
-    enemyDefault: { path: 'src/assets/Enemy/default/', frames: 5 },
-    enemyBoss: { path: 'src/assets/Enemy/boss/', frames: 5 },
-    enemyTank: { path: 'src/assets/Enemy/tank/', frames: 5 },
-    enemyLaser: { path: 'src/assets/Enemy/laser/', frames: 5 },
-    enemyBoost: { path: 'src/assets/Enemy/boost/', frames: 5 },
-    destruction: { path: 'src/assets/general/destroy/', frames: 9 },
-    playerShot: { path: 'src/assets/Player/Assault/shot/', frames: 2 },
+    playerAssault: { path: '/assets/Player/Assault/1/', frames: 5 },
+    playerLaser: { path: '/assets/Player/Laser/1/', frames: 5 },
+    playerTank: { path: '/assets/Player/Tank/1/', frames: 5 },
+    enemyKamikaze: { path: '/assets/Enemy/kamikaze/', frames: 5 },
+    enemyAssault: { path: '/assets/Enemy/assault/', frames: 5 },
+    enemyBoss: { path: '/assets/Enemy/boss/', frames: 5 },
+    enemyTank: { path: '/assets/Enemy/tank/', frames: 5 },
+    enemyLaser: { path: '/assets/Enemy/laser/', frames: 5 },
+    destruction: { path: '/assets/general/destroy/', frames: 9 },
+    playerShot: { path: '/assets/Player/Assault/shot/', frames: 2 },
 };
 
 async function loadAssets() {

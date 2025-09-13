@@ -1,10 +1,10 @@
 import { Enemy } from './Enemy.js';
 
-export class DefaultEnemy extends Enemy {
+export class KamikazeEnemy extends Enemy {
     constructor(x, y, assets, game) {
         const hp = 20;
         const speed = 4;
-        const animationFrames = assets['enemyDefault'];
+        const animationFrames = assets['enemyKamikaze'];
         const scale = 2.0;
         super(x, y, hp, speed, animationFrames, scale, assets, game);
         this.scoreValue = 10;
@@ -24,7 +24,7 @@ export class DefaultEnemy extends Enemy {
         }
     }
 
-    // DefaultEnemy does not shoot
+    // KamikazeEnemy does not shoot
     shoot() {
         return null;
     }
