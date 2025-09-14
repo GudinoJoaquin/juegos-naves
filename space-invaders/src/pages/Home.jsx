@@ -201,12 +201,12 @@ export default function Home() {
       const player = playersRef.current[currentPlayerRef.current];
 
       // HUD
-      ctx.fillStyle = "white";
-      ctx.font = "18px Arial";
-      ctx.fillText(`Jugador: ${player.name}`, 20, 25);
-      ctx.fillText(`Vidas: ${player.lives}`, 20, 50);
-      ctx.fillText(`Nivel: ${currentLevelRef.current + 1}`, 700 - 100, 25);
-      ctx.fillText(`Puntos: ${scoreRef.current}`, 350 - 40, 25);
+      ctx.fillStyle = "#00FF00"; // Verde fosforescente
+      ctx.font = "bold 12px 'Press Start 2P', monospace"; // Fuente retro más pequeña
+      ctx.fillText(`Jugador: ${player.name}`, 20, 18);
+      ctx.fillText(`Vidas: ${player.lives}`, 20, 34);
+      ctx.fillText(`Nivel: ${currentLevelRef.current + 1}`, 700 - 100, 18);
+      ctx.fillText(`Puntos: ${scoreRef.current}`, 350 - 40, 18);
 
       // Movimiento teclado
       if (keysRef.current["ArrowLeft"]) player.x -= PLAYER_SPEED * dt;
@@ -298,6 +298,11 @@ export default function Home() {
       currentEnemySpeedRef.current =
         baseEnemySpeedRef.current * (1 + (killedEnemies / totalEnemies) * 2);
 
+      // Si queda solo un enemigo, acelera mucho más
+      if (enemiesRef.current.length === 1) {
+        currentEnemySpeedRef.current = baseEnemySpeedRef.current * 8;
+      }
+
       // Filtrar balas
       playerBulletsRef.current = playerBulletsRef.current.filter(
         (b) => b.active
@@ -345,6 +350,14 @@ export default function Home() {
       playerBulletsRef.current.forEach((b) => b.draw(ctx));
       enemyBulletsRef.current.forEach((b) => b.draw(ctx));
       barriersRef.current.forEach((barrier) => barrier.draw(ctx));
+
+      // Efecto scanlines retro
+      ctx.globalAlpha = 0.15;
+      ctx.fillStyle = "black";
+      for (let y = 0; y < canvasSize.height / scale; y += 2) {
+        ctx.fillRect(0, y, canvasSize.width / scale, 1);
+      }
+      ctx.globalAlpha = 1;
 
       ctx.restore();
 
@@ -420,6 +433,10 @@ export default function Home() {
       >
         {isPlaying ? "Reiniciar Juego" : "Jugar"}
       </button>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+        rel="stylesheet"
+      ></link>
     </div>
   );
 }

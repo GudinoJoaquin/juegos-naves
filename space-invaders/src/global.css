@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+canvas {
+  border: 4px solid #00FF00;
+  box-shadow: 0 0 20px #00FF00, 0 0 40px #FF00FF inset;
+  background: #222;
+}
