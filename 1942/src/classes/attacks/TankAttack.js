@@ -1,4 +1,4 @@
-import { Grenade } from './Grenade.js';
+import { Grenade } from '../projectiles/Grenade.js';
 
 export class TankAttack {
     constructor(enemy) {

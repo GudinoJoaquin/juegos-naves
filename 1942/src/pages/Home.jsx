@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { GameLoop } from '../classes/GameLoop.js';
-import { InputHandler } from '../classes/InputHandler.js';
+import { GameLoop } from '../classes/core/GameLoop.js';
+import { InputHandler } from '../classes/player/InputHandler.js';
 
 const assetConfig = {
     playerAssault: { path: '/assets/Player/Assault/1/', frames: 5 },
@@ -11,6 +11,7 @@ const assetConfig = {
     enemyBoss: { path: '/assets/Enemy/boss/', frames: 5 },
     enemyTank: { path: '/assets/Enemy/tank/', frames: 5 },
     enemyLaser: { path: '/assets/Enemy/laser/', frames: 5 },
+    
     destruction: { path: '/assets/general/destroy/', frames: 9 },
     playerShot: { path: '/assets/Player/Assault/shot/', frames: 2 },
 };

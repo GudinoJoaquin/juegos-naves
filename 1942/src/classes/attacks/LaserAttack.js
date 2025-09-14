@@ -1,4 +1,4 @@
-import { LaserProjectile } from './LaserProjectile.js';
+import { LaserProjectile } from '../projectiles/LaserProjectile.js';
 
 export class LaserAttack {
     constructor(enemy) {

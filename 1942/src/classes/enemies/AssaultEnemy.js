@@ -18,10 +18,13 @@ export class AssaultEnemy extends Enemy {
 
         this.projectiles = [];
         this.projectileSpeed = 6;
-        this.projectileWidth = 30;   // más finito
-        this.projectileHeight = 5; // más largo
-        this.projectileDamage = 5;  // más daño
+        this.projectileWidth = 30;
+        this.projectileHeight = 5;
+        this.projectileDamage = 5;
         this.projectileDuration = 2000;
+
+        // Distancia mínima a mantener del jugador
+        this.minDistance = 150;
     }
 
     update(game, deltaTime) {
@@ -31,13 +34,18 @@ export class AssaultEnemy extends Enemy {
         const player = game.player;
         if (!player) return;
 
-        // Movimiento rápido hacia el jugador
-        if (player.state === 'alive') {
-            const targetX = player.x;
-            const targetY = player.y - 250;
-            const dx = (targetX - this.x) * 0.03 * this.speed;
-            const dy = (targetY - this.y) * 0.03 * this.speed;
-            this.move(dx, dy);
+        // Movimiento suave hacia el jugador, manteniendo distancia
+        if (this.state === 'alive' && player.state === 'alive') {
+            const dx = player.x - this.x;
+            const dy = player.y - this.y;
+            const distance = Math.hypot(dx, dy);
+
+            if (distance > this.minDistance) {
+                // Solo moverse si está más lejos de la distancia mínima
+                const moveX = (dx / distance) * this.speed;
+                const moveY = (dy / distance) * this.speed;
+                this.move(moveX, moveY);
+            }
         }
 
         // Manejar ráfaga solo si la nave está viva

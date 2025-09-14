@@ -1,5 +1,5 @@
-import { Spaceship } from './Spaceship.js';
-import { Projectile } from './Projectile.js';
+import { Spaceship } from '../core/Spaceship.js';
+import { Projectile } from '../projectiles/Projectile.js';
 
 export class Player extends Spaceship {
     constructor(x, y, shipType, assets) {

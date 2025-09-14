@@ -1,5 +1,5 @@
 import { Enemy } from './Enemy.js';
-import { LaserAttack } from './LaserAttack.js';
+import { LaserAttack } from '../attacks/LaserAttack.js';
 
 export class LaserEnemy extends Enemy {
     constructor(x, y, assets, game) {

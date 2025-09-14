@@ -1,5 +1,5 @@
 import { Enemy } from './Enemy.js';
-import { TankAttack } from './TankAttack.js';
+import { TankAttack } from '../attacks/TankAttack.js';
 
 export class TankEnemy extends Enemy {
     constructor(x, y, assets, game) {
@@ -13,6 +13,9 @@ export class TankEnemy extends Enemy {
 
         this.minDistance = 80; 
         this.tankAttack = new TankAttack(this); // Instantiate the attack class
+        this.explosionRadius = 150; // Pixels
+        this.explosionDamage = 50; // HP
+        this.hasExploded = false;
     }
 
     update(game, deltaTime) {
@@ -40,14 +43,29 @@ export class TankEnemy extends Enemy {
         }
     }
 
+    onDeath() {
+        if (!this.hasExploded) {
+            this.hasExploded = true;
+            // Check for player collision within explosion radius
+            const player = this.game.player; // Access game from this.game
+            const distance = Math.sqrt(
+                Math.pow(this.x - player.x, 2) +
+                Math.pow(this.y - player.y, 2)
+            );
+
+            if (distance < this.explosionRadius + Math.max(player.width, player.height) / 2) {
+                player.takeDamage(this.explosionDamage);
+            }
+        }
+    }
+
     // The shoot method is now handled by TankAttack
     shoot() {
         return null;
     }
 
     draw(ctx) {
-        // dibujar la nave solo si está viva
-        if (this.state === 'alive') super.draw(ctx);
+        super.draw(ctx);
 
         // dibujar todas las granadas aunque la nave esté muerta
         this.tankAttack.draw(ctx);

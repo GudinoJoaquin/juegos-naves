@@ -1,4 +1,4 @@
-import { Spaceship } from './Spaceship.js';
+import { Spaceship } from '../core/Spaceship.js';
 
 export class Enemy extends Spaceship {
     constructor(x, y, hp, speed, animationFrames, scale, assets, game) {

@@ -1,11 +1,12 @@
-import { Player } from './Player.js';
-import { Enemy } from './Enemy.js'; // Base Enemy class
-import { KamikazeEnemy } from './KamikazeEnemy.js';
-import { TankEnemy } from './TankEnemy.js';
-import { LaserEnemy } from './LaserEnemy.js';
-import { AssaultEnemy } from './AssaultEnemy.js';
-import { BoostEnemy } from './BoostEnemy.js';
-import { BossEnemy } from './BossEnemy.js';
+import { Player } from '../player/Player.js';
+import { Enemy } from '../enemies/Enemy.js'; // Base Enemy class
+import { KamikazeEnemy } from '../enemies/KamikazeEnemy.js';
+import { TankEnemy } from '../enemies/TankEnemy.js';
+import { LaserEnemy } from '../enemies/LaserEnemy.js';
+import { AssaultEnemy } from '../enemies/AssaultEnemy.js';
+
+
+import { BossEnemy } from '../enemies/BossEnemy.js';
 
 // Fix: Ensure only one GameLoop class is exported.
 export class GameLoop {
@@ -74,10 +75,8 @@ export class GameLoop {
 
         this.player.update(this, deltaTime);
 
-        this.enemySpawnTimer += deltaTime;
-        if (this.enemySpawnTimer > this.enemySpawnInterval && this.player.state === 'alive') {
+        if (this.enemies.length === 0 && this.player.state === 'alive') {
             this.spawnEnemy();
-            this.enemySpawnTimer = 0;
         }
         this.enemies.forEach(enemy => enemy.update(this, deltaTime));
 
@@ -85,7 +84,7 @@ export class GameLoop {
 
         this.checkCollisions();
 
-        this.enemies = this.enemies.filter(e => e.state !== 'dead');
+        this.enemies = this.enemies.filter(e => !(e.state === 'dead' && e.destructionFrame >= e.destructionFrameCount));
         this.projectiles = this.projectiles.filter(p => !p.isDestroyed);
         
         if (this.player.state === 'dead') {
@@ -121,41 +120,9 @@ export class GameLoop {
     }
 
     spawnEnemy() {
-        const x = Math.random() * (this.canvas.width - 50);
         const y = -100;
-        
-        // Add a chance for a boss to spawn
-        if (Math.random() < 0.1) { // 10% chance to spawn a boss
-            const boss = new BossEnemy(this.canvas.width / 2 - 100, y, this.assets, this);
-            this.enemies.push(boss);
-            return;
-        }
-
-        const enemyTypes = ['kamikaze', 'laser', 'tank', 'assault']; // Removed 'boost' to prevent TypeError
-        const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
-
-        let newEnemy;
-        switch (type) {
-            case 'kamikaze':
-                newEnemy = new KamikazeEnemy(x, y, this.assets, this);
-                break;
-            case 'tank':
-                newEnemy = new TankEnemy(x, y, this.assets, this);
-                break;
-            case 'laser':
-                newEnemy = new LaserEnemy(x, y, this.assets, this);
-                break;
-            case 'assault':
-                newEnemy = new AssaultEnemy(x, y, this.assets, this);
-                break;
-            case 'boost':
-                newEnemy = new BoostEnemy(x, y, this.assets, this);
-                break;
-            default:
-                console.error('Unknown enemy type:', type);
-                return;
-        }
-        this.enemies.push(newEnemy);
+        const boss = new BossEnemy(this.canvas.width / 2 - 100, y, this.assets, this);
+        this.enemies.push(boss);
     }
 
     addProjectile(projectile) {
@@ -194,8 +161,9 @@ export class GameLoop {
         this.enemies.forEach(e => {
             if (e.state === 'alive' && this.player.state === 'alive') {
                 if (this.isColliding(e, this.player)) {
-                    // The base Enemy class's takeDamage will handle the state change to 'dying'
-                    e.takeDamage(e.hp); // Enemy takes full damage and dies on collision
+                    if (!(e instanceof BossEnemy)) {
+                        e.takeDamage(e.hp); // Enemy takes full damage and dies on collision
+                    }
                     this.player.takeDamage(20); // Player takes damage from collision
                 }
             }

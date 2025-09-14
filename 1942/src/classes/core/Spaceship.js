@@ -51,6 +51,9 @@ export class Spaceship {
             this.hp = 0;
             this.state = 'dying';
             this.frameTimer = 0; // Reiniciar timer para la animación de muerte
+            if (typeof this.onDeath === 'function') {
+                this.onDeath();
+            }
         }
     }
 
