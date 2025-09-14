@@ -1,5 +1,7 @@
 import { Enemy } from './Enemy.js';
-import { Projectile } from './Projectile.js';
+import { TankAttack } from './TankAttack.js';
+import { LaserAttack } from './LaserAttack.js';
+import { AssaultAttack } from './AssaultAttack.js';
 
 export class BossEnemy extends Enemy {
     constructor(x, y, assets, game) {
@@ -9,14 +11,23 @@ export class BossEnemy extends Enemy {
         const scale = 3.0;
         super(x, y, hp, speed, animationFrames, scale, assets, game);
         this.scoreValue = 1000;
-        this.shotCooldown = 2000; // Cooldown for the burst
-        this.burstShots = 0;
-        this.burstCooldown = 100; // Cooldown between shots in a burst
+
+        this.tankAttack = new TankAttack(this);
+        this.laserAttack = new LaserAttack(this);
+        this.assaultAttack = new AssaultAttack(this);
+
+        this.attackCooldown = 3000; // Cooldown for switching attacks
+        this.attackTimer = 0;
+        this.currentAttack = 'assault'; // Initial attack type
     }
 
     update(game, deltaTime) {
         super.update(game, deltaTime);
         if (this.state !== 'alive') return;
+
+        // Update all attack types
+        this.tankAttack.update(game, deltaTime);
+        this.laserAttack.update(game, deltaTime);
 
         // Slow, deliberate movement
         const player = game.player;
@@ -28,49 +39,36 @@ export class BossEnemy extends Enemy {
             this.move(dx, dy);
         }
 
-        const projectiles = this.shoot(game);
-        if (projectiles) {
-            projectiles.forEach(p => game.addProjectile(p));
+        this.attackTimer += deltaTime;
+        if (this.attackTimer > this.attackCooldown) {
+            this.attackTimer = 0;
+            // Cycle through attack types
+            const attackTypes = ['assault', 'tank', 'laser'];
+            const currentIndex = attackTypes.indexOf(this.currentAttack);
+            this.currentAttack = attackTypes[(currentIndex + 1) % attackTypes.length];
         }
+
+        // Execute the current attack
+        let projectiles = [];
+        switch (this.currentAttack) {
+            case 'assault':
+                const assaultProjectile = this.assaultAttack.shoot(game);
+                if (assaultProjectile) projectiles.push(assaultProjectile);
+                break;
+            case 'tank':
+                this.tankAttack.shoot(game, game.player, deltaTime);
+                break;
+            case 'laser':
+                // Laser attack is handled by its own update/draw cycle
+                break;
+        }
+
+        projectiles.forEach(p => game.addProjectile(p));
     }
 
-    shoot(game) {
-        if (this.state !== 'alive') return null;
-
-        if (this.shotCooldown > 0) {
-            this.shotCooldown -= game.deltaTime;
-            return null;
-        }
-
-        if (this.burstShots > 0 && this.burstCooldown <= 0) {
-            this.burstShots--;
-            this.burstCooldown = 100; // Reset burst cooldown
-
-            const projectiles = [];
-            const numProjectiles = 5;
-            const angleSpread = Math.PI / 4; // 45 degrees
-            const angleToPlayer = Math.atan2(game.player.y - this.y, game.player.x - this.x);
-
-            for (let i = 0; i < numProjectiles; i++) {
-                const angle = angleToPlayer - angleSpread / 2 + (angleSpread / (numProjectiles - 1)) * i;
-                const projectileSpeed = 7;
-                const vx = Math.cos(angle) * projectileSpeed;
-                const vy = Math.sin(angle) * projectileSpeed;
-                const originX = this.x + this.width / 2;
-                const originY = this.y + this.height / 2;
-                projectiles.push(new Projectile(originX, originY, vx, vy, 10, 'enemy', [], '#ff8c00')); // Dark orange
-            }
-            return projectiles;
-
-        } else if (this.burstShots <= 0) {
-            this.shotCooldown = 3000 + Math.random() * 2000; // Time until next burst
-            this.burstShots = 5; // Number of shots in the burst
-        }
-
-        if (this.burstCooldown > 0) {
-            this.burstCooldown -= game.deltaTime;
-        }
-
-        return null;
+    draw(ctx) {
+        super.draw(ctx);
+        this.tankAttack.draw(ctx);
+        this.laserAttack.draw(ctx);
     }
 }

@@ -4,8 +4,10 @@ import { KamikazeEnemy } from './KamikazeEnemy.js';
 import { TankEnemy } from './TankEnemy.js';
 import { LaserEnemy } from './LaserEnemy.js';
 import { AssaultEnemy } from './AssaultEnemy.js';
+import { BoostEnemy } from './BoostEnemy.js';
 import { BossEnemy } from './BossEnemy.js';
 
+// Fix: Ensure only one GameLoop class is exported.
 export class GameLoop {
     constructor(canvas, inputHandler, assets) {
         this.canvas = canvas;
@@ -129,7 +131,7 @@ export class GameLoop {
             return;
         }
 
-        const enemyTypes = ['kamikaze', 'laser', 'tank', 'assault'];
+        const enemyTypes = ['kamikaze', 'laser', 'tank', 'assault']; // Removed 'boost' to prevent TypeError
         const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
 
         let newEnemy;
@@ -145,6 +147,9 @@ export class GameLoop {
                 break;
             case 'assault':
                 newEnemy = new AssaultEnemy(x, y, this.assets, this);
+                break;
+            case 'boost':
+                newEnemy = new BoostEnemy(x, y, this.assets, this);
                 break;
             default:
                 console.error('Unknown enemy type:', type);
