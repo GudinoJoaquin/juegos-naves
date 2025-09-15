@@ -31,7 +31,6 @@ const UFO_SPEED = 120;
 
 //componente principal del juego a partir de esto se muestra todo el juego
 export default function Home() {
-  //creamos constantes y las inicializamos para que alguna no se re renderizen
   const location = useLocation();
   const { numPlayers, player1Name, player2Name } = location.state || {};
 
@@ -57,14 +56,21 @@ export default function Home() {
   const waveIndexRef = useRef(0);
   const ufoRef = useRef(null);
   const lastUfoSpawn = useRef(Date.now() + UFO_INITIAL_DELAY - UFO_INTERVAL);
-  const touchRef = useRef(false); //ref global para el touch
+  const touchRef = useRef(false);
+  const audioRef = useRef(null); // <-- referencia para el sonido
 
-  //creamos y inicializamos las constantes para que esta si provoquen re renderizado
   const [isPlaying, setIsPlaying] = useState(false);
   const [level, setLevel] = useState(0);
   const [score, setScore] = useState(0);
   const [canvasSize, setCanvasSize] = useState({ width: 700, height: 480 });
   const [scale, setScale] = useState(1);
+  const [gameOver, setGameOver] = useState(false); // estado para mostrar Game Over
+
+  // Inicializar audio
+  useEffect(() => {
+    audioRef.current = new Audio("/src/assets/sounds/laserattack.wav");
+    audioRef.current.loop = true;
+  }, []);
 
   // Ajuste responsive
   useEffect(() => {
@@ -98,7 +104,7 @@ export default function Home() {
     };
   }, []);
 
-  //Evento Touch
+  // Evento Touch
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -106,7 +112,7 @@ export default function Home() {
 
     const handleTouchStart = (e) => {
       touchX = e.touches[0].clientX;
-      touchRef.current = true; // activar disparo
+      touchRef.current = true;
     };
 
     const handleTouchMove = (e) => {
@@ -122,7 +128,7 @@ export default function Home() {
 
     const handleTouchEnd = () => {
       touchX = null;
-      touchRef.current = false; // detener disparo
+      touchRef.current = false;
     };
 
     canvas.addEventListener("touchstart", handleTouchStart);
@@ -136,7 +142,7 @@ export default function Home() {
     };
   }, [scale]);
 
-  //funcion para crear las oleadas de enemigo tanto para celu como para compu
+  // Crear oleada de enemigos
   const createWave = (levelIndex, waveIndex) => {
     const rows = window.innerWidth < 600 ? 3 : 4;
     const cols = window.innerWidth < 600 ? 6 : 10;
@@ -161,7 +167,7 @@ export default function Home() {
     enemyInitialCountRef.current = enemies.length;
   };
 
-  //funcion para resetear el juego
+  // Resetear juego
   const resetGame = () => {
     setLevel(0);
     currentLevelRef.current = 0;
@@ -188,6 +194,7 @@ export default function Home() {
     lastTimeRef.current = 0;
     currentPlayerRef.current = 0;
     gameOverRef.current = false;
+    setGameOver(false);
     scoreRef.current = 0;
     setScore(0);
 
@@ -197,7 +204,7 @@ export default function Home() {
     createWave(0, 0);
   };
 
-  //funcion para guardar el puntaje
+  // Guardar puntaje
   const saveScore = () => {
     const username =
       numPlayers === 2 ? `${player1Name} y ${player2Name}` : player1Name;
@@ -211,7 +218,7 @@ export default function Home() {
       .catch((err) => console.error(err));
   };
 
-  //bucle principal del juego aca se produce la magia
+  // Bucle principal
   const startGameLoop = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -368,7 +375,7 @@ export default function Home() {
         barriersRef.current.forEach((barrier) => barrier.hit(b))
       );
 
-      // --- Manejo del UFO ---
+      // Manejo del UFO
       if (!ufoRef.current && now - lastUfoSpawn.current > UFO_INTERVAL) {
         ufoRef.current = new Ufo(-60, 40, UFO_SPEED, 700);
         lastUfoSpawn.current = now;
@@ -413,10 +420,11 @@ export default function Home() {
         playersRef.current.every((p) => p.lives <= 0)
       ) {
         gameOverRef.current = true;
-        alert("¡Game Over!");
         isPlayingRef.current = false;
         setIsPlaying(false);
+        setGameOver(true);
         saveScore();
+        audioRef.current.pause(); // Detenemos audio en Game Over
         return;
       }
 
@@ -434,10 +442,11 @@ export default function Home() {
           createWave(currentLevelRef.current, waveIndexRef.current);
         } else {
           gameOverRef.current = true;
-          alert("¡Ganaste todos los niveles!");
+          setGameOver(true);
           isPlayingRef.current = false;
           setIsPlaying(false);
           saveScore();
+          audioRef.current.pause(); // Detenemos audio al ganar
           return;
         }
       }
@@ -448,7 +457,6 @@ export default function Home() {
     animationRef.current = requestAnimationFrame(gameLoop);
   };
 
-  //funcion para iniciar y reiniciar el juego
   const handlePlayClick = (e) => {
     e.currentTarget.blur();
     if (!isPlayingRef.current) {
@@ -456,29 +464,46 @@ export default function Home() {
       setIsPlaying(true);
       resetGame();
       startGameLoop();
+      audioRef.current
+        ?.play()
+        .catch(() => console.log("Audio no reproducido."));
     } else {
       cancelAnimationFrame(animationRef.current);
       resetGame();
       startGameLoop();
+      audioRef.current
+        ?.play()
+        .catch(() => console.log("Audio no reproducido."));
     }
   };
 
   useEffect(() => {
-    return () => cancelAnimationFrame(animationRef.current);
+    return () => {
+      cancelAnimationFrame(animationRef.current);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    };
   }, []);
 
   return (
-    <div className="flex flex-col justify-center items-center h-screen bg-black overflow-hidden">
+    <div className="flex flex-col justify-center items-center h-screen bg-black overflow-hidden relative">
       <canvas
         ref={canvasRef}
         width={canvasSize.width}
         height={canvasSize.height}
         style={{ touchAction: "none" }}
       />
+      {gameOver && (
+        <div className="z-10 absolute top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-75 text-white text-4xl font-bold">
+          GAME OVER
+        </div>
+      )}
       <button
         tabIndex={-1}
         onClick={handlePlayClick}
-        className="mt-4 px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 select-none"
+        className="z-40 mt-4 px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 select-none"
       >
         {isPlaying ? "Reiniciar Juego" : "Jugar"}
       </button>
