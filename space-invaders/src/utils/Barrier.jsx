@@ -16,6 +16,7 @@ export default class Barrier {
     }
   }
 
+//"dibuja" las columnas y filas
   draw(ctx) {
     ctx.fillStyle = "green";
     for (let row = 0; row < this.height; row++) {

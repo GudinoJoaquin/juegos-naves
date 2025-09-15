@@ -1,5 +1,6 @@
 import playerImg from "../assets/img/player.png";
 
+//crea la clase jugador con sus respectivas carateristicas
 export default class Player {
   constructor(canvasWidth, canvasHeight, name, invert = false) {
     this.width = 40;
@@ -13,6 +14,7 @@ export default class Player {
     this.invert = invert; // <- si es true, invertimos colores
   }
 
+  //renderiza en pantalla al jugador
   draw(ctx) {
     if (this.invert) {
       ctx.save();

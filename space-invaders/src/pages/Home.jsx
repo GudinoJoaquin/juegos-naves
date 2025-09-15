@@ -1,3 +1,4 @@
+// importamos los componentes, hooks, y el router
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Player from "../utils/Player";
@@ -6,10 +7,11 @@ import Bullet from "../utils/Bullet";
 import Barrier from "../utils/Barrier";
 import Ufo from "../utils/Ufo";
 
+//creamos y inicializamos las constantes del jugador y enemigo
 const PLAYER_COOLDOWN = 300;
 const HORIZONTAL_MARGIN = 30;
 const PLAYER_SPEED = 200;
-const ENEMY_BULLET_SPEED = 150;
+const ENEMY_BULLET_SPEED = 80;
 
 const ENEMY_LEVELS = [
   { color: "red", speed: 50, image: "/src/assets/img/red.png", points: 5 },
@@ -22,11 +24,14 @@ const ENEMY_LEVELS = [
   },
 ];
 
+//creamos y inicializamos del UFO que te da vida
 const UFO_INTERVAL = 15000;
 const UFO_INITIAL_DELAY = 10000;
 const UFO_SPEED = 120;
 
+//componente principal del juego a partir de esto se muestra todo el juego
 export default function Home() {
+  //creamos constantes y las inicializamos para que alguna no se re renderizen
   const location = useLocation();
   const { numPlayers, player1Name, player2Name } = location.state || {};
 
@@ -52,8 +57,9 @@ export default function Home() {
   const waveIndexRef = useRef(0);
   const ufoRef = useRef(null);
   const lastUfoSpawn = useRef(Date.now() + UFO_INITIAL_DELAY - UFO_INTERVAL);
-  const touchRef = useRef(false); // <--- ref global para el touch
+  const touchRef = useRef(false); //ref global para el touch
 
+  //creamos y inicializamos las constantes para que esta si provoquen re renderizado
   const [isPlaying, setIsPlaying] = useState(false);
   const [level, setLevel] = useState(0);
   const [score, setScore] = useState(0);
@@ -92,7 +98,7 @@ export default function Home() {
     };
   }, []);
 
-  // Touch
+  //Evento Touch
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -130,6 +136,7 @@ export default function Home() {
     };
   }, [scale]);
 
+  //funcion para crear las oleadas de enemigo tanto para celu como para compu
   const createWave = (levelIndex, waveIndex) => {
     const rows = window.innerWidth < 600 ? 3 : 4;
     const cols = window.innerWidth < 600 ? 6 : 10;
@@ -154,6 +161,7 @@ export default function Home() {
     enemyInitialCountRef.current = enemies.length;
   };
 
+  //funcion para resetear el juego
   const resetGame = () => {
     setLevel(0);
     currentLevelRef.current = 0;
@@ -189,6 +197,7 @@ export default function Home() {
     createWave(0, 0);
   };
 
+  //funcion para guardar el puntaje
   const saveScore = () => {
     const username =
       numPlayers === 2 ? `${player1Name} y ${player2Name}` : player1Name;
@@ -202,6 +211,7 @@ export default function Home() {
       .catch((err) => console.error(err));
   };
 
+  //bucle principal del juego aca se produce la magia
   const startGameLoop = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -438,6 +448,7 @@ export default function Home() {
     animationRef.current = requestAnimationFrame(gameLoop);
   };
 
+  //funcion para iniciar y reiniciar el juego
   const handlePlayClick = (e) => {
     e.currentTarget.blur();
     if (!isPlayingRef.current) {

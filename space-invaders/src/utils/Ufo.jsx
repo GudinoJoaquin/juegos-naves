@@ -1,5 +1,6 @@
 import ufoImg from "../assets/img/ufo.png";
 
+//crea la clase UFO con sus propiedades
 export default class Ufo {
   constructor(x, y, speed, canvasWidth) {
     this.x = x;
@@ -22,6 +23,7 @@ export default class Ufo {
     if (this.x > this.canvasWidth) this.active = false;
   }
 
+  //renderiza el UFO
   draw(ctx) {
     if (!this.active) return;
     if (this.image.complete) {
@@ -33,6 +35,7 @@ export default class Ufo {
     }
   }
 
+  //colicion con las balas del jugador
   collidesWith(bullet) {
     return (
       this.active &&
