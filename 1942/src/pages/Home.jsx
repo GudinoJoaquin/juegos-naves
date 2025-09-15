@@ -1,7 +1,8 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { GameLoop } from '../classes/core/GameLoop.js';
 import { InputHandler } from '../classes/player/InputHandler.js';
 import UpgradeMenu from '../components/UpgradeMenu.jsx';
+import GameOver from '../components/GameOver.jsx';
 
 const assetConfig = {
     playerAssault: { path: '/assets/Player/Assault/1/', frames: 5 },
@@ -42,97 +43,43 @@ async function loadAssets() {
     return loadedAssets;
 }
 
-function generateUpgradeOptions(level = 1) {
-    const options = [];
-    const availableUpgrades = [
-        { type: 'hp', description: 'Aumentar HP Máximo', apply: (player, value) => player.maxHp += value },
-        { type: 'speed', description: 'Aumentar Velocidad de Nave', apply: (player, value) => player.speed += value },
-        { type: 'bulletDamage', description: 'Aumentar Daño de Bala', apply: (player, value) => player.bulletDamage += value },
-        { type: 'fireRate', description: 'Reducir Enfriamiento de Disparo', apply: (player, value) => player.shotCooldown = Math.max(50, player.shotCooldown - value) },
-        { type: 'projectileSpeed', description: 'Aumentar Velocidad de Proyectil', apply: (player, value) => player.projectileSpeed += value },
-    ];
-    const levelMultiplier = 1 + (level - 1) * 0.1;
-    const chosenUpgradeTypes = [];
-    while (chosenUpgradeTypes.length < 3 && chosenUpgradeTypes.length < availableUpgrades.length) {
-        const randomIndex = Math.floor(Math.random() * availableUpgrades.length);
-        const chosen = availableUpgrades[randomIndex];
-        if (!chosenUpgradeTypes.some(u => u.type === chosen.type)) {
-            chosenUpgradeTypes.push(chosen);
-        }
-    }
-    chosenUpgradeTypes.forEach(upgradeType => {
-        let value;
-        let description;
-        switch (upgradeType.type) {
-            case 'hp':
-                value = Math.floor(20 * levelMultiplier);
-                description = `Aumentar HP Máximo en ${value}`;
-                break;
-            case 'speed':
-                value = 0.5 * levelMultiplier;
-                description = `Aumentar Velocidad de Nave en ${value.toFixed(1)}`;
-                break;
-            case 'bulletDamage':
-                value = Math.floor(5 * levelMultiplier);
-                description = `Aumentar Daño de Bala en ${value}`;
-                break;
-            case 'fireRate':
-                value = Math.floor(20 * levelMultiplier);
-                description = `Reducir Enfriamiento de Disparo en ${value}ms`;
-                break;
-            case 'projectileSpeed':
-                value = Math.floor(2 * levelMultiplier);
-                description = `Aumentar Velocidad de Proyectil en ${value}`;
-                break;
-            default:
-                value = 0;
-                description = 'Mejora Desconocida';
-        }
-        options.push({ ...upgradeType, value, description });
-    });
-    return options;
-}
-
 function Home({ playerName }) {
     const canvasRef = useRef(null);
     const gameLoopRef = useRef(null);
     const assetsRef = useRef(null);
-    const initialUpgradeRef = useRef(null);
 
     const [gameState, setGameState] = useState('loading');
     const [playerStats, setPlayerStats] = useState({});
     const [upgradeOptions, setUpgradeOptions] = useState([]);
     const [selectedUpgradeIndex, setSelectedUpgradeIndex] = useState(0);
     const [gameStats, setGameStats] = useState({});
+    const [assetsLoaded, setAssetsLoaded] = useState(false);
 
-    const updateGameState = useCallback((newState) => setGameState(newState), []);
-
-    const updateUpgradeMenuData = useCallback((stats, options, selectedIndex, newGameStats) => {
+    const updateUpgradeMenuData = (stats, options, selectedIndex, newGameStats) => {
         setPlayerStats(stats);
         setUpgradeOptions(options);
         setSelectedUpgradeIndex(selectedIndex);
         setGameStats(newGameStats);
-    }, []);
+    };
 
-    const handleInitialUpgrade = useCallback((upgrade) => {
-        initialUpgradeRef.current = upgrade;
-        setGameState('playing');
-    }, []);
-
-    const handleInGameUpgrade = useCallback((upgrade) => {
+    const handleUpgrade = (upgrade) => {
         if (gameLoopRef.current) {
-            gameLoopRef.current.applyUpgrade(upgrade);
+            if (gameState === 'initialUpgrade') {
+                gameLoopRef.current.startGame(upgrade);
+            } else {
+                gameLoopRef.current.applyUpgrade(upgrade);
+            }
         }
-    }, []);
+    };
+
+    const handleRestart = () => {
+        window.location.reload();
+    };
 
     useEffect(() => {
         loadAssets().then(assets => {
             assetsRef.current = assets;
-            const initialPlayerStats = { hp: 100, maxHp: 100, speed: 7, bulletDamage: 10, shotCooldown: 200, projectileSpeed: 15 };
-            setPlayerStats(initialPlayerStats);
-            setUpgradeOptions(generateUpgradeOptions(1));
-            setSelectedUpgradeIndex(0);
-            setGameState('initialUpgrade');
+            setAssetsLoaded(true);
         }).catch(error => {
             console.error("No se pudieron cargar los assets del juego:", error);
             setGameState('gameOver');
@@ -140,74 +87,67 @@ function Home({ playerName }) {
     }, []);
 
     useEffect(() => {
-        if (gameState === 'playing' && !gameLoopRef.current) {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
+        if (!assetsLoaded) return;
 
-            const handleResize = () => {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            };
-            window.addEventListener('resize', handleResize);
-            handleResize();
+        const canvas = canvasRef.current;
+        if (!canvas) return;
 
-            const inputHandler = new InputHandler();
-            gameLoopRef.current = new GameLoop(
-                canvas,
-                inputHandler,
-                assetsRef.current,
-                updateGameState,
-                updateUpgradeMenuData,
-                playerName,
-                initialUpgradeRef.current
-            );
-            gameLoopRef.current.start();
+        const handleResize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+        window.addEventListener('resize', handleResize);
+        handleResize();
 
-            return () => {
-                window.removeEventListener('resize', handleResize);
-                gameLoopRef.current?.stop();
+        const inputHandler = new InputHandler();
+        const gameLoop = new GameLoop(
+            canvas,
+            inputHandler,
+            assetsRef.current,
+            setGameState,
+            updateUpgradeMenuData,
+            playerName
+        );
+        gameLoopRef.current = gameLoop;
+        gameLoop.start();
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            if (gameLoopRef.current) {
+                gameLoopRef.current.stop();
                 gameLoopRef.current = null;
-            };
-        } else if (gameState === 'upgradeMenu') {
-            gameLoopRef.current?.pause();
-        }
-    }, [gameState, playerName, updateGameState, updateUpgradeMenuData]);
+            }
+        };
+    }, [assetsLoaded, playerName]);
 
-    const renderContent = () => {
-        switch (gameState) {
-            case 'loading':
-                return <div className="loading-screen"><h1>Cargando...</h1></div>;
-            case 'initialUpgrade':
-                return <UpgradeMenu 
-                    playerStats={playerStats}
-                    upgradeOptions={upgradeOptions}
-                    currentLevel={1}
-                    gameStats={{ score: 0, level: 1, enemiesDestroyed: 0, powerUpsCollected: 0, totalGameTime: 0 }}
-                    onSelectUpgrade={setSelectedUpgradeIndex}
-                    selectedUpgradeIndex={selectedUpgradeIndex}
-                    onConfirmUpgrade={() => handleInitialUpgrade(upgradeOptions[selectedUpgradeIndex])}
-                />;
-            case 'upgradeMenu':
-                return <UpgradeMenu 
-                    playerStats={playerStats}
-                    upgradeOptions={upgradeOptions}
-                    currentLevel={gameStats.level}
-                    gameStats={gameStats}
-                    onSelectUpgrade={setSelectedUpgradeIndex}
-                    selectedUpgradeIndex={selectedUpgradeIndex}
-                    onConfirmUpgrade={() => handleInGameUpgrade(upgradeOptions[selectedUpgradeIndex])}
-                />;
-            case 'playing':
-            case 'gameOver':
-                return <canvas ref={canvasRef} style={{ display: 'block' }} />;
-            default:
-                return null;
+    useEffect(() => {
+        if (!gameLoopRef.current) return;
+
+        if (gameState === 'playing') {
+            gameLoopRef.current.resume();
+        } else if (gameState === 'upgradeMenu' || gameState === 'initialUpgrade' || gameState === 'loading') {
+            gameLoopRef.current.pause();
+        } else if (gameState === 'gameOver') {
+            gameLoopRef.current.stop();
         }
-    };
+
+    }, [gameState]);
 
     return (
         <div className="game-container">
-            {renderContent()}
+            <canvas ref={canvasRef} style={{ display: 'block' }} />
+            {gameState === 'loading' && <div className="loading-screen"><h1>Cargando...</h1></div>}
+            {(gameState === 'initialUpgrade' || gameState === 'upgradeMenu') && 
+                <UpgradeMenu 
+                    playerStats={playerStats}
+                    upgradeOptions={upgradeOptions}
+                    currentLevel={gameStats.level || 1}
+                    gameStats={gameStats}
+                    onSelectUpgrade={setSelectedUpgradeIndex}
+                    selectedUpgradeIndex={selectedUpgradeIndex}
+                    onConfirmUpgrade={() => handleUpgrade(upgradeOptions[selectedUpgradeIndex])}
+                />}
+            {gameState === 'gameOver' && <GameOver score={gameStats.score} onRestart={handleRestart} />}
         </div>
     );
 }
