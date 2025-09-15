@@ -1,30 +1,45 @@
 import { Enemy } from './Enemy.js';
 
 export class AssaultEnemy extends Enemy {
-    constructor(x, y, assets, game) {
-        const hp = 30;
-        const speed = 2.5;
-        const animationFrames = assets['enemyAssault'];
-        const scale = 2.0;
-        super(x, y, hp, speed, animationFrames, scale, assets, game);
+    constructor(x, y, assets, game, options = {}) {
+        const {
+            hp = 30,
+            speed = 2.5,
+            scale = 2.0,
+            scoreValue = 40,
+            burstShots = 3,
+            burstCooldown = 150,
+            shotCooldown = 2000,
+            projectileSpeed = 6,
+            projectileWidth = 30,
+            projectileHeight = 5,
+            projectileDamage = 5,
+            projectileDuration = 2000,
+            minDistance = 150,
+            level = 1
+        } = options;
 
-        this.scoreValue = 40;
+        const animationFrames = assets['enemyAssault'];
+        super(x, y, hp, speed, animationFrames, scale, assets, game, level);
+
+        this.scoreValue = scoreValue;
+        this.level = level;
 
         // Configuración de ráfaga
-        this.burstShots = 3;
-        this.burstCooldown = 150;
+        this.burstShots = burstShots;
+        this.burstCooldown = burstCooldown;
         this.burstTimer = 0;
-        this.shotCooldown = 2000;
+        this.shotCooldown = shotCooldown;
 
         this.projectiles = [];
-        this.projectileSpeed = 6;
-        this.projectileWidth = 30;
-        this.projectileHeight = 5;
-        this.projectileDamage = 5;
-        this.projectileDuration = 2000;
+        this.projectileSpeed = projectileSpeed;
+        this.projectileWidth = projectileWidth;
+        this.projectileHeight = projectileHeight;
+        this.projectileDamage = projectileDamage;
+        this.projectileDuration = projectileDuration;
 
         // Distancia mínima a mantener del jugador
-        this.minDistance = 150;
+        this.minDistance = minDistance;
     }
 
     update(game, deltaTime) {
@@ -108,8 +123,6 @@ export class AssaultEnemy extends Enemy {
     }
 
     draw(ctx) {
-        super.draw(ctx);
-
         // Dibujar proyectiles rectangulares rojos, largos y finitos
         this.projectiles.forEach(p => {
             ctx.save();
@@ -119,5 +132,7 @@ export class AssaultEnemy extends Enemy {
             ctx.fillRect(-this.projectileWidth/2, -this.projectileHeight/2, this.projectileWidth, this.projectileHeight);
             ctx.restore();
         });
+
+        super.draw(ctx);
     }
 }

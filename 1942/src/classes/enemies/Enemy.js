@@ -1,11 +1,12 @@
 import { Spaceship } from '../core/Spaceship.js';
 
 export class Enemy extends Spaceship {
-    constructor(x, y, hp, speed, animationFrames, scale, assets, game) {
-        super(x, y, hp, speed, animationFrames, scale, 'up', assets); // Enemies generally move up
+    constructor(x, y, hp, speed, animationFrames, scale, assets, game, level = 1) {
+        super(x, y, hp, speed, animationFrames, scale, 'up', assets, level); // Enemies generally move up
         this.game = game; // Store game reference for targeting player, etc.
         this.scoreValue = 0; // Default score value, overridden by subclasses
         this.maxHp = hp;
+        this.level = level; // Store the level
 
         // --- IA ---
         this.aiState = 'entering'; // Common AI state
@@ -65,11 +66,11 @@ export class Enemy extends Spaceship {
             context.fillStyle = 'green';
             context.fillRect(healthBarX, healthBarY, healthBarWidth * healthPercentage, healthBarHeight);
 
-            // Enemy type name
+            // Enemy type name and level
             context.fillStyle = 'white';
             context.font = '12px Arial';
             context.textAlign = 'center';
-            context.fillText(this.constructor.name, this.x + this.width / 2, this.y - 25);
+            context.fillText(`${this.constructor.name} Lvl:${this.level}`, this.x + this.width / 2, this.y - 25);
         }
     }
 }

@@ -1,0 +1,140 @@
+/* StartScreen.css */
+
+.start-screen-container {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(17, 24, 39, 0.95) 0%, rgba(0, 0, 0, 0.98) 100%);
+    backdrop-filter: blur(5px) brightness(0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 100; /* Ensure it's on top of everything */
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.game-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    color: #00eaff; /* Hologram primary color */
+    text-shadow: 0 0 10px #00eaff, 0 0 20px #007bff;
+    letter-spacing: 0.15em;
+    animation: pulse 2s ease-in-out infinite alternate, text-flicker 0.1s infinite alternate;
+}
+
+.player-selection {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.player-selection h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #e0e0e0;
+}
+
+.player-count-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.player-count-button {
+    background: rgba(0, 123, 255, 0.2); /* Softer blue */
+    border: 1px solid #007bff;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.player-count-button:hover {
+    background: rgba(0, 123, 255, 0.4);
+    box-shadow: 0 0 10px #007bff;
+}
+
+.player-count-button.selected {
+    background: #007bff;
+    box-shadow: 0 0 15px #00eaff, 0 0 25px #007bff;
+    border-color: #00eaff;
+}
+
+.name-input-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    width: 100%;
+    max-width: 300px;
+}
+
+.name-input-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.name-input-group label {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    color: #00eaff;
+    text-shadow: 0 0 5px #00eaff;
+}
+
+.name-input-group input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #00eaff;
+    padding: 0.75rem;
+    font-size: 1rem;
+    color: white;
+    border-radius: 0.25rem;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.name-input-group input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 8px #007bff;
+}
+
+.start-game-button {
+    background: linear-gradient(to right, #28a745, #20c997);
+    border: none;
+    color: white;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px #28a745;
+}
+
+.start-game-button:hover {
+    background: linear-gradient(to right, #20c997, #28a745);
+    box-shadow: 0 0 15px #28a745;
+    transform: scale(1.05);
+}
+
+/* Keyframe Animations (re-used from UpgradeMenu.css or defined here) */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes text-flicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+        text-shadow: 0 0 10px #00eaff, 0 0 20px #007bff;
+        opacity: 1;
+    }
+    20%, 24%, 55% {
+        text-shadow: none;
+        opacity: 0.8;
+    }
+}

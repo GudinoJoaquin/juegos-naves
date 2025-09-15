@@ -1,5 +1,6 @@
 export class Spaceship {
-    constructor(x, y, hp, speed, animationFrames, scale = 1, thrusterDirection = 'down', assets = {}) {
+    constructor(x, y, hp, speed, animationFrames, scale = 1, thrusterDirection = 'down', assets = {}, level = 1, name = '') {
+        this.name = name;
         this.x = x;
         this.y = y;
         this.hp = hp;
@@ -7,10 +8,13 @@ export class Spaceship {
         this.animationFrames = animationFrames;
         this.scale = scale;
         this.thrusterDirection = thrusterDirection;
+        this.level = level; // Store the level
         
         this.width = (animationFrames[0] ? animationFrames[0].width : 50) * this.scale;
         this.height = (animationFrames[0] ? animationFrames[0].height : 50) * this.scale;
         
+        
+
         this.state = 'alive'; // alive, dying, dead
         this.isMoving = false;
         this.angle = 0;
@@ -154,5 +158,17 @@ export class Spaceship {
         
         // Restaurar el estado del canvas para no afectar a otros dibujos
         context.restore();
+
+        // Dibujar el nombre del jugador si existe
+        if (this.name) {
+            // No necesitamos guardar/restaurar el contexto aquí si ya restauramos el principal
+            // y queremos dibujar en coordenadas absolutas.
+            context.fillStyle = 'white';
+            context.font = '16px Arial';
+            context.textAlign = 'center';
+            // Posicionar el texto encima de la nave
+            // Las coordenadas deben ser absolutas, no relativas al origen transformado
+            context.fillText(this.name, this.x + this.width / 2, this.y - 10);
+        }
     }
 }

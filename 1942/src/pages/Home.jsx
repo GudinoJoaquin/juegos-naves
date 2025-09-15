@@ -1,6 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { GameLoop } from '../classes/core/GameLoop.js';
 import { InputHandler } from '../classes/player/InputHandler.js';
+import UpgradeMenu from '../components/UpgradeMenu.jsx';
 
 const assetConfig = {
     playerAssault: { path: '/assets/Player/Assault/1/', frames: 5 },
@@ -59,36 +60,65 @@ async function loadAssets() {
     }
 
     await Promise.all(promises);
+    
+    
     return loadedAssets;
 }
 
-function Home() {
+function Home({ playerName }) {
     const canvasRef = useRef(null);
     const [loading, setLoading] = useState(true);
+    const [gameState, setGameState] = useState('loading'); // 'loading', 'playing', 'upgradeMenu', 'gameOver'
+    const [playerStats, setPlayerStats] = useState({});
+    const [upgradeOptions, setUpgradeOptions] = useState([]);
+    const [selectedUpgradeIndex, setSelectedUpgradeIndex] = useState(0);
+
+    const gameLoopRef = useRef(null);
+
+    const updateGameState = useCallback((newState) => {
+        setGameState(newState);
+    }, []);
+
+    const updateUpgradeMenuData = useCallback((stats, options, selectedIndex) => {
+        setPlayerStats(stats);
+        setUpgradeOptions(options);
+        setSelectedUpgradeIndex(selectedIndex);
+    }, []);
+
+    const applyUpgradeAndResumeGame = useCallback((upgrade) => {
+        if (gameLoopRef.current) {
+            gameLoopRef.current.applyUpgrade(upgrade);
+            setGameState('playing');
+        }
+    }, []);
 
     useEffect(() => {
+        console.log(`useEffect: Current gameState is ${gameState}`);
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        if (!canvas || gameState !== 'loading') return; // Only run when gameState is 'loading'
 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        let gameLoop;
-
-        async function startGame() {
+        async function initGame() {
+            console.log('initGame: Loading assets...');
             try {
                 const assets = await loadAssets();
+                console.log('initGame: Assets loaded. Initializing GameLoop...');
                 const inputHandler = new InputHandler();
-                gameLoop = new GameLoop(canvas, inputHandler, assets);
-                gameLoop.start();
+                gameLoopRef.current = new GameLoop(canvas, inputHandler, assets, updateGameState, updateUpgradeMenuData, playerName);
+                gameLoopRef.current.start();
                 setLoading(false);
+                console.log('initGame: GameLoop initialized and started. Setting gameState to playing.');
+                setGameState('playing'); // Game starts after assets are loaded
             } catch (error) {
                 console.error("No se pudieron cargar los assets del juego:", error);
                 setLoading(false);
+                setGameState('gameOver'); // Or some error state
             }
         }
 
-        startGame();
+        initGame();
 
         const handleResize = () => {
             if (canvas) {
@@ -100,17 +130,29 @@ function Home() {
         window.addEventListener('resize', handleResize);
 
         return () => {
-            if (gameLoop) {
-                gameLoop.stop();
+            if (gameLoopRef.current) {
+                gameLoopRef.current.stop();
             }
             window.removeEventListener('resize', handleResize);
         };
-    }, []);
+    }, [gameState, updateGameState, updateUpgradeMenuData, playerName]);
 
     return (
         <div className="game-container">
-            {loading && <div className="loading-screen"><h1>Cargando...</h1></div>}
-            <canvas ref={canvasRef} />
+            {loading && gameState === 'loading' && <div className="loading-screen"><h1>Cargando...</h1></div>}
+            {gameState === 'upgradeMenu' && (
+                <UpgradeMenu 
+                    playerStats={playerStats}
+                    upgradeOptions={upgradeOptions}
+                    onSelectUpgrade={(index) => {
+                        setSelectedUpgradeIndex(index);
+                        // Optionally, update description based on selected index here if needed
+                    }}
+                    selectedUpgradeIndex={selectedUpgradeIndex}
+                    onConfirmUpgrade={() => applyUpgradeAndResumeGame(upgradeOptions[selectedUpgradeIndex])}
+                />
+            )}
+            <canvas ref={canvasRef} style={{ display: gameState === 'playing' ? 'block' : 'none' }} />
         </div>
     );
 }

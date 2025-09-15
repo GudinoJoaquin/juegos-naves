@@ -1,61 +1,85 @@
 import { Enemy } from './Enemy.js';
 
 export class BossEnemy extends Enemy {
-    constructor(x, y, assets, game) {
-        const hp = 1200;
-        const speed = 1.2;
+    constructor(x, y, assets, game, options = {}) {
+        const {
+            hp = 1200,
+            speed = 1.2,
+            scale = 4.0,
+            scoreValue = 5000,
+            minHorizontalSpeed = 1,
+            maxHorizontalSpeed = 3,
+            verticalSpeed = 0.5,
+            targetY = 50,
+            attackCooldown = 2500,
+            orbCount = 20,
+            orbSpeed = 3,
+            orbDamage = 20,
+            orbChargeTime = 1500,
+            blackholeDamage = 40,
+            blackholeChargeTime = 1500,
+            blackholeMaxRadius = 50,
+            gunDuration = 3000,
+            gunChargeTime = 1500,
+            shieldDuration = 4000,
+            shieldCooldown = 5000,
+            damageThreshold = 100,
+            initialShieldHealth = 100,
+            level = 1
+        } = options;
+
         const animationFrames = assets['enemyBoss'];
-        const scale = 4.0;
-        super(x, y, hp, speed, animationFrames, scale, assets, game);
-        this.scoreValue = 5000;
+        super(x, y, hp, speed, animationFrames, scale, assets, game, level);
+        this.scoreValue = scoreValue;
+        this.level = level;
 
         // Movimiento
         this.movementPhase = 'entering';
-        this.minHorizontalSpeed = 1;
-        this.maxHorizontalSpeed = 3;
+        this.minHorizontalSpeed = minHorizontalSpeed;
+        this.maxHorizontalSpeed = maxHorizontalSpeed;
         this.horizontalDirection = Math.random() < 0.5 ? -1 : 1;
         this.horizontalSpeed = Math.random() * (this.maxHorizontalSpeed - this.minHorizontalSpeed) + this.minHorizontalSpeed;
-        this.verticalSpeed = 0.5;
-        this.targetY = 50;
+        this.verticalSpeed = verticalSpeed;
+        this.targetY = targetY;
 
         // Ataques
         this.attackTimer = 0;
-        this.attackCooldown = 2500;
+        this.attackCooldown = attackCooldown;
         this.attackCount = 3;
-        this.currentAttack = null; // nuevo: para controlar un ataque a la vez
+        this.currentAttack = null;
 
         // Orbes
-        this.orbCount = 20;
-        this.orbSpeed = 3;
-        this.orbDamage = 20;
+        this.orbCount = orbCount;
+        this.orbSpeed = orbSpeed;
+        this.orbDamage = orbDamage;
         this.orbProjectiles = [];
-        this.orbChargeTime = 1500;
+        this.orbChargeTime = orbChargeTime;
         this.orbChargeTimer = 0;
 
         // Agujero negro
-        this.blackholeDamage = 40;
+        this.blackholeDamage = blackholeDamage;
         this.blackholeProjectiles = [];
-        this.blackholeChargeTime = 1500;
+        this.blackholeChargeTime = blackholeChargeTime;
         this.blackholeChargeTimer = 0;
-        this.blackholeMaxRadius = 50;
+        this.blackholeMaxRadius = blackholeMaxRadius;
 
         // Metralleta
-        this.gunDuration = 3000;
+        this.gunDuration = gunDuration;
         this.gunTimer = 0;
         this.gunFiring = false;
         this.gunProjectiles = [];
-        this.gunChargeTime = 1500;
+        this.gunChargeTime = gunChargeTime;
         this.gunChargeTimer = 0;
 
         // Escudo
         this.isShieldActive = false;
-        this.shieldDuration = 4000;
-        this.shieldCooldown = 5000;
+        this.shieldDuration = shieldDuration;
+        this.shieldCooldown = shieldCooldown;
         this.shieldTimer = 0;
         this.recentDamage = 0;
-        this.damageThreshold = 100;
+        this.damageThreshold = damageThreshold;
         this.lastShieldTime = 0;
-        this.shieldHealth = 100;
+        this.shieldHealth = initialShieldHealth;
     }
 
     update(game, deltaTime) {
@@ -240,7 +264,7 @@ export class BossEnemy extends Enemy {
                 },
                 draw(ctx) {
                     ctx.save();
-                    ctx.fillStyle = 'lime';
+                    ctx.fillStyle = 'red'; // Changed to red
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                     ctx.fill();
@@ -298,11 +322,11 @@ export class BossEnemy extends Enemy {
         },
         draw(ctx) {
             ctx.save();
-            ctx.fillStyle = 'black';
+            ctx.fillStyle = 'red'; // Changed to red
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
             ctx.fill();
-            ctx.strokeStyle = 'purple';
+            ctx.strokeStyle = 'darkred'; // Changed to darkred
             ctx.stroke();
             ctx.restore();
         }
@@ -329,8 +353,7 @@ export class BossEnemy extends Enemy {
             this.gunProjectiles.push({
                 x: cannonX,
                 y,
-                width: 6,
-                height: 16,
+                radius: 8, // Changed from width/height to radius
                 damage: 8,
                 angle,
                 speed,
@@ -340,19 +363,21 @@ export class BossEnemy extends Enemy {
                     this.y += Math.sin(this.angle) * this.speed;
 
                     const player = game.player;
-                    if (player && player.state === 'alive' &&
-                        this.x < player.x + player.width &&
-                        this.x + this.width > player.x &&
-                        this.y < player.y + player.height &&
-                        this.y + this.height > player.y) {
-                        player.takeDamage(this.damage);
-                        this.state = 'dead';
+                    if (player && player.state === 'alive') { // Changed collision detection to circle-based
+                        const distX = this.x - (player.x + player.width / 2);
+                        const distY = this.y - (player.y + player.height / 2);
+                        if (Math.hypot(distX, distY) < player.width / 2 + this.radius) {
+                            player.takeDamage(this.damage);
+                            this.state = 'dead';
+                        }
                     }
                 },
                 draw(ctx) {
                     ctx.save();
                     ctx.fillStyle = 'red';
-                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); // Changed to draw a circle
+                    ctx.fill();
                     ctx.restore();
                 }
             });
@@ -360,6 +385,10 @@ export class BossEnemy extends Enemy {
     }
 
     draw(ctx) {
+        this.orbProjectiles.forEach(p => p.draw(ctx)); // Moved before super.draw
+        this.blackholeProjectiles.forEach(p => p.draw(ctx)); // Moved before super.draw
+        this.gunProjectiles.forEach(p => p.draw(ctx)); // Moved before super.draw
+
         // Filtros de carga
         ctx.save();
         if (this.currentAttack === 'orb') ctx.filter = 'brightness(1.5) saturate(1.5)';
@@ -379,9 +408,5 @@ export class BossEnemy extends Enemy {
             ctx.stroke();
             ctx.restore();
         }
-
-        this.orbProjectiles.forEach(p => p.draw(ctx));
-        this.blackholeProjectiles.forEach(p => p.draw(ctx));
-        this.gunProjectiles.forEach(p => p.draw(ctx));
     }
 }

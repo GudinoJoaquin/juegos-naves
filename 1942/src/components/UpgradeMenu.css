@@ -1,0 +1,217 @@
+:root {
+    --holo-primary: #00f0ff;
+    --holo-glow: 0 0 8px var(--holo-primary), 0 0 20px rgba(0, 240, 255, 0.6);
+    --stat-color: #00ffff;
+}
+
+/* Contenedor principal */
+.upgrade-menu-container {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(0,0,20,0.95), rgba(0,0,0,1));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    font-family: 'Press Start 2P', monospace;
+    z-index: 50;
+}
+
+/* Título */
+.upgrade-menu-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--holo-primary);
+    text-shadow: var(--holo-glow);
+    margin-bottom: 1rem;
+    animation: flicker 1.5s infinite alternate;
+}
+
+/* Contenido central */
+.upgrade-content-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 72rem;
+    gap: 1rem;
+}
+
+/* Panel de stats holográfico */
+.player-stats-panel {
+    background: rgba(0, 240, 255, 0.07);
+    border: 1px solid var(--holo-primary);
+    box-shadow: var(--holo-glow);
+    backdrop-filter: blur(8px);
+    padding: 1rem;
+    border-radius: 1rem;
+    color: var(--stat-color);
+    width: 25%;
+    font-size: 0.75rem;
+    transform: perspective(800px) rotateY(-6deg) rotateX(2deg);
+    animation: float 3s ease-in-out infinite;
+}
+
+.player-stats-panel.right {
+    transform: perspective(800px) rotateY(6deg) rotateX(2deg);
+    text-align: right;
+}
+
+.player-stats-panel h2 {
+    font-size: 0.85rem;
+    color: var(--holo-primary);
+    text-shadow: var(--holo-glow);
+    margin-bottom: 0.5rem;
+}
+
+/* Stats */
+.stat-item {
+    margin-bottom: 0.3rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+.stat-current,
+.stat-projected {
+    font-weight: bold;
+    color: var(--stat-color);
+}
+
+.stat-line-through {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+/* Nave holográfica */
+.player-ship-hologram {
+    position: relative;
+    width: 14rem;
+    height: 14rem;
+    border: 2px solid var(--holo-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite, float 4s ease-in-out infinite;
+    background: rgba(0, 240, 255, 0.05);
+    box-shadow: var(--holo-glow);
+    transform: perspective(900px) rotateY(12deg) rotateX(6deg);
+}
+
+.player-ship-hologram img {
+    width: 8rem;
+    height: 8rem;
+    object-fit: contain;
+    filter: drop-shadow(0 0 12px var(--holo-primary));
+}
+
+.player-ship-hologram-border {
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--holo-primary);
+    border-radius: 50%;
+    animation: ping 2s infinite;
+}
+
+/* Tarjetas de mejora */
+.upgrade-cards-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    width: 100%;
+    overflow-x: hidden; /* evita scroll al hover */
+    flex-wrap: wrap; /* para pantallas pequeñas */
+}
+
+.upgrade-card {
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid var(--holo-primary);
+    box-shadow: var(--holo-glow);
+    color: var(--stat-color);
+    padding: 0.75rem;
+    border-radius: 1rem;
+    text-align: center;
+    cursor: pointer;
+    flex: 0 0 12rem; /* ancho fijo */
+    height: 6.5rem; /* altura fija */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 800px;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.upgrade-card:hover {
+    transform: rotateY(8deg) rotateX(4deg); /* solo rotación 3D */
+    box-shadow: 0 0 28px var(--holo-primary), 0 0 40px rgba(0, 240, 255, 0.5);
+}
+
+.upgrade-card.selected {
+    border-color: var(--holo-primary);
+    box-shadow: 0 0 32px var(--holo-primary), 0 0 48px rgba(0, 240, 255, 0.6);
+}
+
+/* Botón holográfico */
+.confirm-button {
+    margin-top: 1rem;
+    padding: 1rem 2rem;
+    background: rgba(0, 240, 255, 0.08);
+    border: 2px solid var(--holo-primary);
+    border-radius: 1rem;
+    color: var(--holo-primary);
+    font-weight: bold;
+    font-size: 0.95rem;
+    text-shadow: var(--holo-glow);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--holo-glow);
+    backdrop-filter: blur(8px);
+}
+
+.confirm-button:hover {
+    transform: rotateX(4deg) rotateY(-2deg); /* rotación 3D sin escalar */
+    box-shadow: 0 0 30px var(--holo-primary), 0 0 45px rgba(0, 240, 255, 0.5);
+}
+
+/* Animaciones */
+@keyframes flicker {
+    0%, 100% { opacity: 1; }
+    45% { opacity: 0.85; }
+    50% { opacity: 0.65; }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.95; }
+    50% { opacity: 0.65; }
+}
+
+@keyframes ping {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.15); opacity: 0; }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .upgrade-content-area {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    .player-stats-panel {
+        width: 100%;
+        text-align: center;
+        transform: none;
+    }
+    .player-stats-panel.right {
+        transform: none;
+    }
+    .upgrade-cards-container {
+        overflow-x: auto;
+    }
+}

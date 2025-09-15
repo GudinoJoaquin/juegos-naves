@@ -1,21 +1,31 @@
 import { Enemy } from './Enemy.js';
 
 export class KamikazeEnemy extends Enemy {
-    constructor(x, y, assets, game) {
-        const hp = 20;
-        const speed = 4;
-        const animationFrames = assets['enemyKamikaze'];
-        const scale = 2.0;
-        super(x, y, hp, speed, animationFrames, scale, assets, game);
+    constructor(x, y, assets, game, options = {}) {
+        const {
+            hp = 20,
+            speed = 4,
+            scale = 2.0,
+            scoreValue = 10,
+            explosionRadius = 100,
+            explosionDamage = 30,
+            explosionDuration = 800,
+            level = 1
+        } = options;
 
-        this.scoreValue = 10;
-        this.explosionRadius = 100;
-        this.explosionDamage = 30;
+        const animationFrames = assets['enemyKamikaze'];
+        super(x, y, hp, speed, animationFrames, scale, assets, game, level);
+
+        this.scoreValue = scoreValue;
+        this.level = level;
+
+        this.explosionRadius = explosionRadius;
+        this.explosionDamage = explosionDamage;
         this.hasExploded = false;
 
-        this.explosionTimer = 0; // Tiempo restante de explosión
-        this.explosionDuration = 800; // 0.8 segundos
-        this.currentExplosionRadius = 0; // radio actual durante animación
+        this.explosionTimer = 0;
+        this.explosionDuration = explosionDuration;
+        this.currentExplosionRadius = 0;
     }
 
     update(game, deltaTime) {
@@ -61,19 +71,19 @@ export class KamikazeEnemy extends Enemy {
     }
 
     draw(ctx) {
-        super.draw(ctx);
-
         // Dibujar explosión animada
         if (this.hasExploded && this.explosionTimer > 0) {
             const alpha = this.explosionTimer / this.explosionDuration;
             ctx.save();
-            ctx.strokeStyle = `rgba(255,100,0,${alpha})`;
+            ctx.strokeStyle = `rgba(255,0,0,${alpha})`;
             ctx.lineWidth = 4;
             ctx.beginPath();
             ctx.arc(this.x + this.width/2, this.y + this.height/2, this.currentExplosionRadius, 0, Math.PI*2);
             ctx.stroke();
             ctx.restore();
         }
+
+        super.draw(ctx);
     }
 
     shoot() {
