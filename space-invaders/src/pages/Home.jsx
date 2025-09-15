@@ -4,6 +4,7 @@ import Player from "../utils/Player";
 import Enemy from "../utils/Enemy";
 import Bullet from "../utils/Bullet";
 import Barrier from "../utils/Barrier";
+import Ufo from "../utils/Ufo";
 
 const PLAYER_COOLDOWN = 300;
 const HORIZONTAL_MARGIN = 30;
@@ -20,6 +21,10 @@ const ENEMY_LEVELS = [
     points: 15,
   },
 ];
+
+const UFO_INTERVAL = 15000;
+const UFO_INITIAL_DELAY = 10000;
+const UFO_SPEED = 120;
 
 export default function Home() {
   const location = useLocation();
@@ -45,6 +50,9 @@ export default function Home() {
   const enemyInitialCountRef = useRef(0);
   const currentLevelRef = useRef(0);
   const waveIndexRef = useRef(0);
+  const ufoRef = useRef(null);
+  const lastUfoSpawn = useRef(Date.now() + UFO_INITIAL_DELAY - UFO_INTERVAL);
+  const touchRef = useRef(false); // <--- ref global para el touch
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [level, setLevel] = useState(0);
@@ -57,7 +65,7 @@ export default function Home() {
     const handleResize = () => {
       const maxWidth = window.innerWidth;
       const maxHeight = window.innerHeight - 80;
-      const ratio = window.innerWidth <= 720 ? 90 / 140 : 700 / 480;
+      const ratio = 720 / 480;
       let width = maxWidth;
       let height = width / ratio;
       if (height > maxHeight) {
@@ -84,12 +92,17 @@ export default function Home() {
     };
   }, []);
 
-  // Control táctil
+  // Touch
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     let touchX = null;
-    const handleTouchStart = (e) => (touchX = e.touches[0].clientX);
+
+    const handleTouchStart = (e) => {
+      touchX = e.touches[0].clientX;
+      touchRef.current = true; // activar disparo
+    };
+
     const handleTouchMove = (e) => {
       if (touchX === null) return;
       const dx = e.touches[0].clientX - touchX;
@@ -100,11 +113,16 @@ export default function Home() {
       if (player.x + player.width > 700 - HORIZONTAL_MARGIN)
         player.x = 700 - HORIZONTAL_MARGIN - player.width;
     };
-    const handleTouchEnd = () => (touchX = null);
+
+    const handleTouchEnd = () => {
+      touchX = null;
+      touchRef.current = false; // detener disparo
+    };
 
     canvas.addEventListener("touchstart", handleTouchStart);
     canvas.addEventListener("touchmove", handleTouchMove);
     canvas.addEventListener("touchend", handleTouchEnd);
+
     return () => {
       canvas.removeEventListener("touchstart", handleTouchStart);
       canvas.removeEventListener("touchmove", handleTouchMove);
@@ -117,7 +135,7 @@ export default function Home() {
     const cols = window.innerWidth < 600 ? 6 : 10;
     const { speed, image, points } = ENEMY_LEVELS[levelIndex];
     const enemies = [];
-    const yStart = 30;
+    const yStart = 60;
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         const enemy = new Enemy(
@@ -141,7 +159,7 @@ export default function Home() {
     currentLevelRef.current = 0;
     waveIndexRef.current = 0;
 
-    const p1 = new Player(700, 480, player1Name, false);
+    const p1 = new Player(720, 480, player1Name, false);
     const p2 =
       numPlayers === 2 ? new Player(700, 480, player2Name, true) : null;
     playersRef.current = p2 ? [p1, p2] : [p1];
@@ -164,6 +182,9 @@ export default function Home() {
     gameOverRef.current = false;
     scoreRef.current = 0;
     setScore(0);
+
+    ufoRef.current = null;
+    lastUfoSpawn.current = Date.now() + UFO_INITIAL_DELAY - UFO_INTERVAL;
 
     createWave(0, 0);
   };
@@ -201,8 +222,8 @@ export default function Home() {
       const player = playersRef.current[currentPlayerRef.current];
 
       // HUD
-      ctx.fillStyle = "#00FF00"; // Verde fosforescente
-      ctx.font = "bold 12px 'Press Start 2P', monospace"; // Fuente retro más pequeña
+      ctx.fillStyle = "#00FF00";
+      ctx.font = "bold 12px 'Press Start 2P', monospace";
       ctx.fillText(`Jugador: ${player.name}`, 20, 18);
       ctx.fillText(`Vidas: ${player.lives}`, 20, 34);
       ctx.fillText(`Nivel: ${currentLevelRef.current + 1}`, 700 - 100, 18);
@@ -215,10 +236,10 @@ export default function Home() {
       if (player.x + player.width > 700 - HORIZONTAL_MARGIN)
         player.x = 700 - HORIZONTAL_MARGIN - player.width;
 
-      // Disparo teclado
+      // Disparo teclado + touch
       const now = Date.now();
       if (
-        keysRef.current[" "] &&
+        (keysRef.current[" "] || touchRef.current) &&
         now - lastShotRef.current >= PLAYER_COOLDOWN
       ) {
         playerBulletsRef.current.push(
@@ -297,11 +318,8 @@ export default function Home() {
       const killedEnemies = totalEnemies - enemiesRef.current.length;
       currentEnemySpeedRef.current =
         baseEnemySpeedRef.current * (1 + (killedEnemies / totalEnemies) * 2);
-
-      // Si queda solo un enemigo, acelera mucho más
-      if (enemiesRef.current.length === 1) {
+      if (enemiesRef.current.length === 1)
         currentEnemySpeedRef.current = baseEnemySpeedRef.current * 8;
-      }
 
       // Filtrar balas
       playerBulletsRef.current = playerBulletsRef.current.filter(
@@ -321,17 +339,13 @@ export default function Home() {
           player.lives -= 1;
           if (player.lives < 0) player.lives = 0;
 
-          // Cambiar al siguiente jugador si hay 2 jugadores
           if (numPlayers === 2) {
             const nextPlayer =
               (currentPlayerRef.current + 1) % playersRef.current.length;
-            if (playersRef.current[nextPlayer].lives > 0) {
+            if (playersRef.current[nextPlayer].lives > 0)
               currentPlayerRef.current = nextPlayer;
-            } else if (
-              playersRef.current[currentPlayerRef.current].lives <= 0
-            ) {
+            else if (playersRef.current[currentPlayerRef.current].lives <= 0)
               gameOverRef.current = true;
-            }
           }
         }
       });
@@ -344,6 +358,29 @@ export default function Home() {
         barriersRef.current.forEach((barrier) => barrier.hit(b))
       );
 
+      // --- Manejo del UFO ---
+      if (!ufoRef.current && now - lastUfoSpawn.current > UFO_INTERVAL) {
+        ufoRef.current = new Ufo(-60, 40, UFO_SPEED, 700);
+        lastUfoSpawn.current = now;
+      }
+
+      if (ufoRef.current) {
+        ufoRef.current.update(dt);
+        ufoRef.current.draw(ctx);
+
+        playerBulletsRef.current.forEach((b) => {
+          if (ufoRef.current.collidesWith(b)) {
+            b.active = false;
+            ufoRef.current.active = false;
+            const player = playersRef.current[currentPlayerRef.current];
+            player.lives += player.lives < 3 ? 1 : 0;
+            setScore(scoreRef.current);
+          }
+        });
+
+        if (!ufoRef.current.active) ufoRef.current = null;
+      }
+
       // Dibujar todo
       player.draw(ctx);
       enemiesRef.current.forEach((enemy) => enemy.draw(ctx));
@@ -351,12 +388,11 @@ export default function Home() {
       enemyBulletsRef.current.forEach((b) => b.draw(ctx));
       barriersRef.current.forEach((barrier) => barrier.draw(ctx));
 
-      // Efecto scanlines retro
+      // Scanlines retro
       ctx.globalAlpha = 0.15;
       ctx.fillStyle = "black";
-      for (let y = 0; y < canvasSize.height / scale; y += 2) {
+      for (let y = 0; y < canvasSize.height / scale; y += 2)
         ctx.fillRect(0, y, canvasSize.width / scale, 1);
-      }
       ctx.globalAlpha = 1;
 
       ctx.restore();
@@ -403,7 +439,7 @@ export default function Home() {
   };
 
   const handlePlayClick = (e) => {
-    e.currentTarget.blur(); // quita el focus del botón
+    e.currentTarget.blur();
     if (!isPlayingRef.current) {
       isPlayingRef.current = true;
       setIsPlaying(true);
@@ -438,7 +474,7 @@ export default function Home() {
       <link
         href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
         rel="stylesheet"
-      ></link>
+      />
     </div>
   );
 }
