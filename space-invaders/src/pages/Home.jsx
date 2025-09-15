@@ -6,28 +6,16 @@ import Enemy from "../utils/Enemy";
 import Bullet from "../utils/Bullet";
 import Barrier from "../utils/Barrier";
 import Ufo from "../utils/Ufo";
-
-//creamos y inicializamos las constantes del jugador y enemigo
-const PLAYER_COOLDOWN = 300;
-const HORIZONTAL_MARGIN = 30;
-const PLAYER_SPEED = 200;
-const ENEMY_BULLET_SPEED = 80;
-
-const ENEMY_LEVELS = [
-  { color: "red", speed: 50, image: "/src/assets/img/red.png", points: 5 },
-  { color: "green", speed: 70, image: "/src/assets/img/green.png", points: 10 },
-  {
-    color: "yellow",
-    speed: 90,
-    image: "/src/assets/img/yellow.png",
-    points: 15,
-  },
-];
-
-//creamos y inicializamos del UFO que te da vida
-const UFO_INTERVAL = 15000;
-const UFO_INITIAL_DELAY = 10000;
-const UFO_SPEED = 120;
+import {
+  PLAYER_COOLDOWN,
+  HORIZONTAL_MARGIN,
+  PLAYER_SPEED,
+  ENEMY_BULLET_SPEED,
+  ENEMY_LEVELS,
+  UFO_INTERVAL,
+  UFO_INITIAL_DELAY,
+  UFO_SPEED,
+} from "../utils/config.jsx";
 
 //componente principal del juego a partir de esto se muestra todo el juego
 export default function Home() {
