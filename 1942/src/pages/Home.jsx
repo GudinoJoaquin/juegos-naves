@@ -72,6 +72,7 @@ function Home({ playerName }) {
     const [playerStats, setPlayerStats] = useState({});
     const [upgradeOptions, setUpgradeOptions] = useState([]);
     const [selectedUpgradeIndex, setSelectedUpgradeIndex] = useState(0);
+    const [currentLevel, setCurrentLevel] = useState(1);
 
     const gameLoopRef = useRef(null);
 
@@ -79,46 +80,52 @@ function Home({ playerName }) {
         setGameState(newState);
     }, []);
 
-    const updateUpgradeMenuData = useCallback((stats, options, selectedIndex) => {
+    const updateUpgradeMenuData = useCallback((stats, options, selectedIndex, level) => {
         setPlayerStats(stats);
         setUpgradeOptions(options);
         setSelectedUpgradeIndex(selectedIndex);
+        setCurrentLevel(level);
     }, []);
 
     const applyUpgradeAndResumeGame = useCallback((upgrade) => {
         if (gameLoopRef.current) {
             gameLoopRef.current.applyUpgrade(upgrade);
             setGameState('playing');
+            gameLoopRef.current.resume(); // Resume the game loop
         }
     }, []);
 
     useEffect(() => {
         console.log(`useEffect: Current gameState is ${gameState}`);
         const canvas = canvasRef.current;
-        if (!canvas || gameState !== 'loading') return; // Only run when gameState is 'loading'
+        if (!canvas) return;
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        async function initGame() {
-            console.log('initGame: Loading assets...');
-            try {
-                const assets = await loadAssets();
-                console.log('initGame: Assets loaded. Initializing GameLoop...');
-                const inputHandler = new InputHandler();
-                gameLoopRef.current = new GameLoop(canvas, inputHandler, assets, updateGameState, updateUpgradeMenuData, playerName);
-                gameLoopRef.current.start();
-                setLoading(false);
-                console.log('initGame: GameLoop initialized and started. Setting gameState to playing.');
-                setGameState('playing'); // Game starts after assets are loaded
-            } catch (error) {
-                console.error("No se pudieron cargar los assets del juego:", error);
-                setLoading(false);
-                setGameState('gameOver'); // Or some error state
+        if (gameState === 'loading') {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            async function initGame() {
+                console.log('initGame: Loading assets...');
+                try {
+                    const assets = await loadAssets();
+                    console.log('initGame: Assets loaded. Initializing GameLoop...');
+                    const inputHandler = new InputHandler();
+                    gameLoopRef.current = new GameLoop(canvas, inputHandler, assets, updateGameState, updateUpgradeMenuData, playerName);
+                    gameLoopRef.current.start();
+                    setLoading(false);
+                    console.log('initGame: GameLoop initialized and started. Setting gameState to playing.');
+                    setGameState('playing'); // Game starts after assets are loaded
+                } catch (error) {
+                    console.error("No se pudieron cargar los assets del juego:", error);
+                    setLoading(false);
+                    setGameState('gameOver'); // Or some error state
+                }
+            }
+            initGame();
+        } else if (gameState === 'upgradeMenu') {
+            if (gameLoopRef.current) {
+                gameLoopRef.current.pause(); // Pause the game loop when in upgrade menu
             }
         }
-
-        initGame();
 
         const handleResize = () => {
             if (canvas) {
@@ -144,6 +151,7 @@ function Home({ playerName }) {
                 <UpgradeMenu 
                     playerStats={playerStats}
                     upgradeOptions={upgradeOptions}
+                    currentLevel={currentLevel}
                     onSelectUpgrade={(index) => {
                         setSelectedUpgradeIndex(index);
                         // Optionally, update description based on selected index here if needed

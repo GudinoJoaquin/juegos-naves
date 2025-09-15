@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'; // Import useState and useEffect
 import './UpgradeMenu.css'; // Import the new CSS file
 
-const UpgradeMenu = ({ playerStats, upgradeOptions, onSelectUpgrade, selectedUpgradeIndex, onConfirmUpgrade }) => {
+const UpgradeMenu = ({ playerStats, upgradeOptions, onSelectUpgrade, selectedUpgradeIndex, onConfirmUpgrade, currentLevel }) => {
     // Ship sprite animation state
     const [shipFrame, setShipFrame] = useState(1);
     const totalShipFrames = 5; // Assuming 1.png to 5.png
@@ -99,7 +99,7 @@ const UpgradeMenu = ({ playerStats, upgradeOptions, onSelectUpgrade, selectedUpg
                 <div className="player-stats-panel">
                     <h2>Estadísticas Adicionales:</h2>
                     <p className="stat-item">Puntuación: <span className="stat-current">N/A</span></p>
-                    <p className="stat-item">Nivel: <span className="stat-current">N/A</span></p>
+                    <p className="stat-item">Nivel: <span className="stat-current">{currentLevel}</span></p>
                     <p className="stat-item">Enemigos Destruidos: <span className="stat-current">N/A</span></p>
                     <p className="stat-item">Tiempo de Juego: <span className="stat-current">N/A</span></p>
                     <p className="stat-item">Power-ups Recogidos: <span className="stat-current">N/A</span></p>

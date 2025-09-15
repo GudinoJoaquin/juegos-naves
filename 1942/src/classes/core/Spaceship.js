@@ -161,14 +161,16 @@ export class Spaceship {
 
         // Dibujar el nombre del jugador si existe
         if (this.name) {
-            // No necesitamos guardar/restaurar el contexto aquí si ya restauramos el principal
-            // y queremos dibujar en coordenadas absolutas.
-            context.fillStyle = 'white';
-            context.font = '16px Arial';
+            context.save(); // Save context for hologram effect
+            context.globalAlpha = 0.7; // Semi-transparent
+            context.fillStyle = '#00FFFF'; // Cyan color
+            context.font = 'bold 14px Arial'; // Bold and slightly smaller font
             context.textAlign = 'center';
+            context.shadowBlur = 5;
+            context.shadowColor = '#00FFFF';
             // Posicionar el texto encima de la nave
-            // Las coordenadas deben ser absolutas, no relativas al origen transformado
-            context.fillText(this.name, this.x + this.width / 2, this.y - 10);
+            context.fillText(this.name, this.x + this.width / 2, this.y - 15); // Adjusted Y position
+            context.restore(); // Restore context
         }
     }
 }
