@@ -402,7 +402,8 @@ export default function Home() {
     animationRef.current = requestAnimationFrame(gameLoop);
   };
 
-  const handlePlayClick = () => {
+  const handlePlayClick = (e) => {
+    e.currentTarget.blur(); // quita el focus del botón
     if (!isPlayingRef.current) {
       isPlayingRef.current = true;
       setIsPlaying(true);
@@ -428,6 +429,7 @@ export default function Home() {
         style={{ touchAction: "none" }}
       />
       <button
+        tabIndex={-1}
         onClick={handlePlayClick}
         className="mt-4 px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 select-none"
       >
