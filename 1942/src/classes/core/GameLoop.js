@@ -8,7 +8,7 @@ import { BossEnemy } from '../enemies/BossEnemy.js';
 import { ShieldPowerUp, LaserModePowerUp, TankModePowerUp, BoostPowerUp, MovementSpeedPowerUp, FireRatePowerUp, HealthPowerUp } from '../powerups/PowerUp.js';
 
 export class GameLoop {
-    constructor(canvas, inputHandler, assets, updateGameState, updateUpgradeMenuData, playerName) {
+    constructor(canvas, inputHandler, assets, updateGameState, updateUpgradeMenuData, playerName, initialUpgrade = null) {
         this.canvas = canvas;
         this.context = canvas.getContext('2d');
         this.inputHandler = inputHandler;
@@ -17,6 +17,7 @@ export class GameLoop {
         this.updateUpgradeMenuData = updateUpgradeMenuData; // Callback from Home.jsx
 
         this.player = new Player(this.canvas.width / 2 - 25, this.canvas.height - 100, 'Assault', this.assets, playerName);
+        this.applyInitialUpgrade(initialUpgrade);
 
         this.enemies = [];
         this.projectiles = [];
@@ -60,6 +61,10 @@ export class GameLoop {
         this._gameState = 'playing'; // Internal state, managed by setter
         this.upgradeOptions = [];
         this.selectedUpgradeIndex = 0;
+
+        this.enemiesDestroyed = 0;
+        this.powerUpsCollected = 0;
+        this.totalGameTime = 0;
 
         this.initializeGame(); // Uncommented to start the game properly
     }
@@ -289,6 +294,7 @@ export class GameLoop {
         if (this.isGameOver) return;
 
         if (this.gameState === 'playing') {
+            this.totalGameTime += deltaTime;
             this.stars.forEach(star => {
                 star.y += star.speed * (deltaTime / 16.67);
                 if (star.y > this.canvas.height) {
@@ -345,13 +351,21 @@ export class GameLoop {
             this.enemies = this.enemies.filter(e => {
                 if (e.state === 'dead' && e.destructionFrame >= e.destructionFrameCount) {
                     this.enemiesOnScreenCount--;
+                    this.enemiesDestroyed++; // Increment here
                     // Randomly spawn a power-up on enemy death
                     // Removed power-up drop from enemies as per new requirement
                     if (e instanceof BossEnemy) {
                         this.bossActive = false;
                         this.setGameState('upgradeMenu'); // Transition to upgrade menu
                         this.generateUpgradeOptions();
-                        this.updateUpgradeMenuData(this.player.getStats(), this.upgradeOptions, this.selectedUpgradeIndex, this.currentLevel);
+                        const gameStats = {
+                            score: this.player.score,
+                            level: this.currentLevel,
+                            enemiesDestroyed: this.enemiesDestroyed,
+                            powerUpsCollected: this.powerUpsCollected,
+                            totalGameTime: this.totalGameTime
+                        };
+                        this.updateUpgradeMenuData(this.player.getStats(), this.upgradeOptions, this.selectedUpgradeIndex, gameStats);
                     }
                     return false;
                 }
@@ -492,6 +506,15 @@ export class GameLoop {
         this.setGameState('playing'); // Use setter to update state in Home.jsx
         this.currentLevel++;
         this.setupLevel();
+        this.resume();
+    }
+
+    applyInitialUpgrade(upgrade) {
+        if (!upgrade) return;
+        upgrade.apply(this.player, upgrade.value);
+        if (upgrade.type === 'hp') {
+            this.player.hp = this.player.maxHp;
+        }
     }
 
     createEnemyWithDifficulty(EnemyConstructor, x, y, assets, game, level) {
@@ -622,6 +645,7 @@ export class GameLoop {
             if (!powerUp.isCollected && this.isColliding(this.player, powerUp)) {
                 powerUp.apply(this.player, this); // Pass 'this' (GameLoop instance) as the game object
                 powerUp.isCollected = true;
+                this.powerUpsCollected++; // Increment here
             }
         });
     }

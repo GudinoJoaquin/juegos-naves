@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'; // Import useState and useEffect
 import './UpgradeMenu.css'; // Import the new CSS file
 
-const UpgradeMenu = ({ playerStats, upgradeOptions, onSelectUpgrade, selectedUpgradeIndex, onConfirmUpgrade, currentLevel }) => {
+const UpgradeMenu = ({ playerStats, upgradeOptions, onSelectUpgrade, selectedUpgradeIndex, onConfirmUpgrade, gameStats }) => {
     // Ship sprite animation state
     const [shipFrame, setShipFrame] = useState(1);
     const totalShipFrames = 5; // Assuming 1.png to 5.png
@@ -98,11 +98,11 @@ const UpgradeMenu = ({ playerStats, upgradeOptions, onSelectUpgrade, selectedUpg
                 {/* Player Stats (Right) - Placeholder or duplicate for visual balance */}
                 <div className="player-stats-panel">
                     <h2>Estadísticas Adicionales:</h2>
-                    <p className="stat-item">Puntuación: <span className="stat-current">N/A</span></p>
-                    <p className="stat-item">Nivel: <span className="stat-current">{currentLevel}</span></p>
-                    <p className="stat-item">Enemigos Destruidos: <span className="stat-current">N/A</span></p>
-                    <p className="stat-item">Tiempo de Juego: <span className="stat-current">N/A</span></p>
-                    <p className="stat-item">Power-ups Recogidos: <span className="stat-current">N/A</span></p>
+                    <p className="stat-item">Puntuación: <span className="stat-current">{gameStats.score}</span></p>
+                    <p className="stat-item">Nivel: <span className="stat-current">{gameStats.level}</span></p>
+                    <p className="stat-item">Enemigos Destruidos: <span className="stat-current">{gameStats.enemiesDestroyed}</span></p>
+                    <p className="stat-item">Tiempo de Juego: <span className="stat-current">{Math.floor(gameStats.totalGameTime / 1000)}s</span></p>
+                    <p className="stat-item">Power-ups Recogidos: <span className="stat-current">{gameStats.powerUpsCollected}</span></p>
                 </div>
             </div>
 

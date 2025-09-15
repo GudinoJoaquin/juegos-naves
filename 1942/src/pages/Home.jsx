@@ -12,7 +12,6 @@ const assetConfig = {
     enemyBoss: { path: '/assets/Enemy/boss/', frames: 5 },
     enemyTank: { path: '/assets/Enemy/tank/', frames: 5 },
     enemyLaser: { path: '/assets/Enemy/laser/', frames: 5 },
-    
     destruction: { path: '/assets/general/destroy/', frames: 9 },
     playerShot: { path: '/assets/Player/Assault/shot/', frames: 2 },
 };
@@ -20,27 +19,12 @@ const assetConfig = {
 async function loadAssets() {
     const loadedAssets = {};
     const promises = [];
-
     for (const [name, config] of Object.entries(assetConfig)) {
-        if (config.type === 'single') {
-            promises.push(new Promise((resolve, reject) => {
-                const img = new Image();
-                img.src = config.path;
-                img.onload = () => {
-                    loadedAssets[name] = img;
-                    resolve();
-                };
-                img.onerror = () => {
-                    console.error(`Error cargando ${config.path}`);
-                    reject(`Error cargando ${config.path}`);
-                };
-            }));
-        } else {
-            const framePromises = [];
+        if (config.frames > 1) {
             loadedAssets[name] = [];
             for (let i = 1; i <= config.frames; i++) {
                 const path = `${config.path}${i}.png`;
-                framePromises.push(
+                promises.push(
                     new Promise((resolve, reject) => {
                         const img = new Image();
                         img.src = path;
@@ -48,119 +32,182 @@ async function loadAssets() {
                             loadedAssets[name][i - 1] = img;
                             resolve();
                         };
-                        img.onerror = () => {
-                            console.error(`Error cargando ${path}`);
-                            reject(`Error cargando ${path}`);
-                        };
+                        img.onerror = () => reject(`Error cargando ${path}`);
                     })
                 );
             }
-            promises.push(...framePromises);
         }
     }
-
     await Promise.all(promises);
-    
-    
     return loadedAssets;
+}
+
+function generateUpgradeOptions(level = 1) {
+    const options = [];
+    const availableUpgrades = [
+        { type: 'hp', description: 'Aumentar HP Máximo', apply: (player, value) => player.maxHp += value },
+        { type: 'speed', description: 'Aumentar Velocidad de Nave', apply: (player, value) => player.speed += value },
+        { type: 'bulletDamage', description: 'Aumentar Daño de Bala', apply: (player, value) => player.bulletDamage += value },
+        { type: 'fireRate', description: 'Reducir Enfriamiento de Disparo', apply: (player, value) => player.shotCooldown = Math.max(50, player.shotCooldown - value) },
+        { type: 'projectileSpeed', description: 'Aumentar Velocidad de Proyectil', apply: (player, value) => player.projectileSpeed += value },
+    ];
+    const levelMultiplier = 1 + (level - 1) * 0.1;
+    const chosenUpgradeTypes = [];
+    while (chosenUpgradeTypes.length < 3 && chosenUpgradeTypes.length < availableUpgrades.length) {
+        const randomIndex = Math.floor(Math.random() * availableUpgrades.length);
+        const chosen = availableUpgrades[randomIndex];
+        if (!chosenUpgradeTypes.some(u => u.type === chosen.type)) {
+            chosenUpgradeTypes.push(chosen);
+        }
+    }
+    chosenUpgradeTypes.forEach(upgradeType => {
+        let value;
+        let description;
+        switch (upgradeType.type) {
+            case 'hp':
+                value = Math.floor(20 * levelMultiplier);
+                description = `Aumentar HP Máximo en ${value}`;
+                break;
+            case 'speed':
+                value = 0.5 * levelMultiplier;
+                description = `Aumentar Velocidad de Nave en ${value.toFixed(1)}`;
+                break;
+            case 'bulletDamage':
+                value = Math.floor(5 * levelMultiplier);
+                description = `Aumentar Daño de Bala en ${value}`;
+                break;
+            case 'fireRate':
+                value = Math.floor(20 * levelMultiplier);
+                description = `Reducir Enfriamiento de Disparo en ${value}ms`;
+                break;
+            case 'projectileSpeed':
+                value = Math.floor(2 * levelMultiplier);
+                description = `Aumentar Velocidad de Proyectil en ${value}`;
+                break;
+            default:
+                value = 0;
+                description = 'Mejora Desconocida';
+        }
+        options.push({ ...upgradeType, value, description });
+    });
+    return options;
 }
 
 function Home({ playerName }) {
     const canvasRef = useRef(null);
-    const [loading, setLoading] = useState(true);
-    const [gameState, setGameState] = useState('loading'); // 'loading', 'playing', 'upgradeMenu', 'gameOver'
+    const gameLoopRef = useRef(null);
+    const assetsRef = useRef(null);
+    const initialUpgradeRef = useRef(null);
+
+    const [gameState, setGameState] = useState('loading');
     const [playerStats, setPlayerStats] = useState({});
     const [upgradeOptions, setUpgradeOptions] = useState([]);
     const [selectedUpgradeIndex, setSelectedUpgradeIndex] = useState(0);
-    const [currentLevel, setCurrentLevel] = useState(1);
+    const [gameStats, setGameStats] = useState({});
 
-    const gameLoopRef = useRef(null);
+    const updateGameState = useCallback((newState) => setGameState(newState), []);
 
-    const updateGameState = useCallback((newState) => {
-        setGameState(newState);
-    }, []);
-
-    const updateUpgradeMenuData = useCallback((stats, options, selectedIndex, level) => {
+    const updateUpgradeMenuData = useCallback((stats, options, selectedIndex, newGameStats) => {
         setPlayerStats(stats);
         setUpgradeOptions(options);
         setSelectedUpgradeIndex(selectedIndex);
-        setCurrentLevel(level);
+        setGameStats(newGameStats);
     }, []);
 
-    const applyUpgradeAndResumeGame = useCallback((upgrade) => {
+    const handleInitialUpgrade = useCallback((upgrade) => {
+        initialUpgradeRef.current = upgrade;
+        setGameState('playing');
+    }, []);
+
+    const handleInGameUpgrade = useCallback((upgrade) => {
         if (gameLoopRef.current) {
             gameLoopRef.current.applyUpgrade(upgrade);
-            setGameState('playing');
-            gameLoopRef.current.resume(); // Resume the game loop
         }
     }, []);
 
     useEffect(() => {
-        console.log(`useEffect: Current gameState is ${gameState}`);
-        const canvas = canvasRef.current;
-        if (!canvas) return;
+        loadAssets().then(assets => {
+            assetsRef.current = assets;
+            const initialPlayerStats = { hp: 100, maxHp: 100, speed: 7, bulletDamage: 10, shotCooldown: 200, projectileSpeed: 15 };
+            setPlayerStats(initialPlayerStats);
+            setUpgradeOptions(generateUpgradeOptions(1));
+            setSelectedUpgradeIndex(0);
+            setGameState('initialUpgrade');
+        }).catch(error => {
+            console.error("No se pudieron cargar los assets del juego:", error);
+            setGameState('gameOver');
+        });
+    }, []);
 
-        if (gameState === 'loading') {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            async function initGame() {
-                console.log('initGame: Loading assets...');
-                try {
-                    const assets = await loadAssets();
-                    console.log('initGame: Assets loaded. Initializing GameLoop...');
-                    const inputHandler = new InputHandler();
-                    gameLoopRef.current = new GameLoop(canvas, inputHandler, assets, updateGameState, updateUpgradeMenuData, playerName);
-                    gameLoopRef.current.start();
-                    setLoading(false);
-                    console.log('initGame: GameLoop initialized and started. Setting gameState to playing.');
-                    setGameState('playing'); // Game starts after assets are loaded
-                } catch (error) {
-                    console.error("No se pudieron cargar los assets del juego:", error);
-                    setLoading(false);
-                    setGameState('gameOver'); // Or some error state
-                }
-            }
-            initGame();
-        } else if (gameState === 'upgradeMenu') {
-            if (gameLoopRef.current) {
-                gameLoopRef.current.pause(); // Pause the game loop when in upgrade menu
-            }
-        }
+    useEffect(() => {
+        if (gameState === 'playing' && !gameLoopRef.current) {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
 
-        const handleResize = () => {
-            if (canvas) {
+            const handleResize = () => {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
-            }
-        };
+            };
+            window.addEventListener('resize', handleResize);
+            handleResize();
 
-        window.addEventListener('resize', handleResize);
+            const inputHandler = new InputHandler();
+            gameLoopRef.current = new GameLoop(
+                canvas,
+                inputHandler,
+                assetsRef.current,
+                updateGameState,
+                updateUpgradeMenuData,
+                playerName,
+                initialUpgradeRef.current
+            );
+            gameLoopRef.current.start();
 
-        return () => {
-            if (gameLoopRef.current) {
-                gameLoopRef.current.stop();
-            }
-            window.removeEventListener('resize', handleResize);
-        };
-    }, [gameState, updateGameState, updateUpgradeMenuData, playerName]);
+            return () => {
+                window.removeEventListener('resize', handleResize);
+                gameLoopRef.current?.stop();
+                gameLoopRef.current = null;
+            };
+        } else if (gameState === 'upgradeMenu') {
+            gameLoopRef.current?.pause();
+        }
+    }, [gameState, playerName, updateGameState, updateUpgradeMenuData]);
+
+    const renderContent = () => {
+        switch (gameState) {
+            case 'loading':
+                return <div className="loading-screen"><h1>Cargando...</h1></div>;
+            case 'initialUpgrade':
+                return <UpgradeMenu 
+                    playerStats={playerStats}
+                    upgradeOptions={upgradeOptions}
+                    currentLevel={1}
+                    gameStats={{ score: 0, level: 1, enemiesDestroyed: 0, powerUpsCollected: 0, totalGameTime: 0 }}
+                    onSelectUpgrade={setSelectedUpgradeIndex}
+                    selectedUpgradeIndex={selectedUpgradeIndex}
+                    onConfirmUpgrade={() => handleInitialUpgrade(upgradeOptions[selectedUpgradeIndex])}
+                />;
+            case 'upgradeMenu':
+                return <UpgradeMenu 
+                    playerStats={playerStats}
+                    upgradeOptions={upgradeOptions}
+                    currentLevel={gameStats.level}
+                    gameStats={gameStats}
+                    onSelectUpgrade={setSelectedUpgradeIndex}
+                    selectedUpgradeIndex={selectedUpgradeIndex}
+                    onConfirmUpgrade={() => handleInGameUpgrade(upgradeOptions[selectedUpgradeIndex])}
+                />;
+            case 'playing':
+            case 'gameOver':
+                return <canvas ref={canvasRef} style={{ display: 'block' }} />;
+            default:
+                return null;
+        }
+    };
 
     return (
         <div className="game-container">
-            {loading && gameState === 'loading' && <div className="loading-screen"><h1>Cargando...</h1></div>}
-            {gameState === 'upgradeMenu' && (
-                <UpgradeMenu 
-                    playerStats={playerStats}
-                    upgradeOptions={upgradeOptions}
-                    currentLevel={currentLevel}
-                    onSelectUpgrade={(index) => {
-                        setSelectedUpgradeIndex(index);
-                        // Optionally, update description based on selected index here if needed
-                    }}
-                    selectedUpgradeIndex={selectedUpgradeIndex}
-                    onConfirmUpgrade={() => applyUpgradeAndResumeGame(upgradeOptions[selectedUpgradeIndex])}
-                />
-            )}
-            <canvas ref={canvasRef} style={{ display: gameState === 'playing' ? 'block' : 'none' }} />
+            {renderContent()}
         </div>
     );
 }
