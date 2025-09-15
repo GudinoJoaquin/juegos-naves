@@ -76,60 +76,62 @@ const UpgradeMenu = ({ playerStats, upgradeOptions, onSelectUpgrade, selectedUpg
 
     return (
         <div className="upgrade-menu-container">
-            <h1 className="upgrade-menu-title">¡Elige tu Mejora!</h1>
+            <div className="upgrade-menu-content">
+                <h1 className="upgrade-menu-title">¡Elige tu Mejora!</h1>
 
-            <div className="upgrade-content-area">
-                {/* Player Stats (Left) */}
-                <div className="player-stats-panel">
-                    <h2>Tus Estadísticas:</h2>
-                    {renderStat('HP', `${playerStats.hp}/${playerStats.maxHp}`, `${projectedStats.hp}/${projectedStats.maxHp}`, 'hp')}
-                    {renderStat('Velocidad', playerStats.speed, projectedStats.speed, 'speed')}
-                    {renderStat('Daño Bala', playerStats.bulletDamage, projectedStats.bulletDamage, 'bulletDamage')}
-                    {renderStat('Cadencia', `${playerStats.shotCooldown}ms`, `${projectedStats.shotCooldown}ms`, 'fireRate')}
-                    {renderStat('Vel. Proyectil', playerStats.projectileSpeed, projectedStats.projectileSpeed, 'projectileSpeed')}
-                </div>
-
-                {/* Player Ship Animation (Center) */}
-                <div className="player-ship-hologram">
-                    <img src={`/assets/Player/Assault/1/${shipFrame}.png`} alt="Player Ship" />
-                    <div className="player-ship-hologram-border"></div>
-                </div>
-
-                {/* Player Stats (Right) - Placeholder or duplicate for visual balance */}
-                <div className="player-stats-panel">
-                    <h2>Estadísticas Adicionales:</h2>
-                    <p className="stat-item">Puntuación: <span className="stat-current">{gameStats.score}</span></p>
-                    <p className="stat-item">Nivel: <span className="stat-current">{gameStats.level}</span></p>
-                    <p className="stat-item">Enemigos Destruidos: <span className="stat-current">{gameStats.enemiesDestroyed}</span></p>
-                    <p className="stat-item">Tiempo de Juego: <span className="stat-current">{Math.floor(gameStats.totalGameTime / 1000)}s</span></p>
-                    <p className="stat-item">Power-ups Recogidos: <span className="stat-current">{gameStats.powerUpsCollected}</span></p>
-                </div>
-            </div>
-
-            {/* Upgrade Cards (Bottom) */}
-            <div className="upgrade-cards-container">
-                {upgradeOptions.map((option, index) => (
-                    <div 
-                        key={option.type}
-                        className={`upgrade-card ${index === selectedUpgradeIndex ? 'selected' : ''}`}
-                        onClick={() => onSelectUpgrade(index)}
-                    >
-                        <h3>{option.description}</h3>
-                        {/* Removed description paragraph as per user request */}
-                        {index === selectedUpgradeIndex && (
-                            <div className="upgrade-card-border-animation"></div>
-                        )}
+                <div className="upgrade-content-area">
+                    {/* Player Stats (Left) */}
+                    <div className="player-stats-panel">
+                        <h2>Tus Estadísticas:</h2>
+                        {renderStat('HP', `${playerStats.hp}/${playerStats.maxHp}`, `${projectedStats.hp}/${projectedStats.maxHp}`, 'hp')}
+                        {renderStat('Velocidad', playerStats.speed, projectedStats.speed, 'speed')}
+                        {renderStat('Daño Bala', playerStats.bulletDamage, projectedStats.bulletDamage, 'bulletDamage')}
+                        {renderStat('Cadencia', `${playerStats.shotCooldown}ms`, `${projectedStats.shotCooldown}ms`, 'fireRate')}
+                        {renderStat('Vel. Proyectil', playerStats.projectileSpeed, projectedStats.projectileSpeed, 'projectileSpeed')}
                     </div>
-                ))}
-            </div>
 
-            {/* Confirm Button */}
-            <button 
-                onClick={onConfirmUpgrade}
-                className="confirm-button animate-bounce-slow"
-            >
-                Aceptar Mejora y Continuar
-            </button>
+                    {/* Player Ship Animation (Center) */}
+                    <div className="player-ship-hologram">
+                        <img src={`/assets/Player/Assault/1/${shipFrame}.png`} alt="Player Ship" />
+                        <div className="player-ship-hologram-border"></div>
+                    </div>
+
+                    {/* Player Stats (Right) - Placeholder or duplicate for visual balance */}
+                    <div className="player-stats-panel">
+                        <h2>Estadísticas Adicionales:</h2>
+                        <p className="stat-item">Puntuación: <span className="stat-current">{gameStats.score}</span></p>
+                        <p className="stat-item">Nivel: <span className="stat-current">{gameStats.level}</span></p>
+                        <p className="stat-item">Enemigos Destruidos: <span className="stat-current">{gameStats.enemiesDestroyed}</span></p>
+                        <p className="stat-item">Tiempo de Juego: <span className="stat-current">{Math.floor(gameStats.totalGameTime / 1000)}s</span></p>
+                        <p className="stat-item">Power-ups Recogidos: <span className="stat-current">{gameStats.powerUpsCollected}</span></p>
+                    </div>
+                </div>
+
+                {/* Upgrade Cards (Bottom) */}
+                <div className="upgrade-cards-container">
+                    {upgradeOptions.map((option, index) => (
+                        <div 
+                            key={option.type}
+                            className={`upgrade-card ${index === selectedUpgradeIndex ? 'selected' : ''}`}
+                            onClick={() => onSelectUpgrade(index)}
+                        >
+                            <h3>{option.shortDescription}</h3>
+                            <p className="upgrade-value-description">{option.valueDescription}</p>
+                            {index === selectedUpgradeIndex && (
+                                <div className="upgrade-card-border-animation"></div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Confirm Button */}
+                <button 
+                    onClick={onConfirmUpgrade}
+                    className="confirm-button animate-bounce-slow"
+                >
+                    Aceptar Mejora y Continuar
+                </button>
+            </div>
         </div>
     );
 };

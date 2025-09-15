@@ -1,8 +1,10 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { GameLoop } from '../classes/core/GameLoop.js';
 import { InputHandler } from '../classes/player/InputHandler.js';
 import UpgradeMenu from '../components/UpgradeMenu.jsx';
 import GameOver from '../components/GameOver.jsx';
+import CockpitHUD from '../components/CockpitHUD.jsx'; // Import CockpitHUD
+import PowerUpHologram from '../components/PowerUpHologram.jsx'; // Import PowerUpHologram
 
 const assetConfig = {
     playerAssault: { path: '/assets/Player/Assault/1/', frames: 5 },
@@ -37,6 +39,7 @@ async function loadAssets() {
                     })
                 );
             }
+            
         }
     }
     await Promise.all(promises);
@@ -54,6 +57,8 @@ function Home({ playerName }) {
     const [selectedUpgradeIndex, setSelectedUpgradeIndex] = useState(0);
     const [gameStats, setGameStats] = useState({});
     const [assetsLoaded, setAssetsLoaded] = useState(false);
+    const [hudData, setHudData] = useState({}); // New state for HUD data
+    const [hologramEffects, setHologramEffects] = useState([]); // State for hologram effects
 
     const updateUpgradeMenuData = (stats, options, selectedIndex, newGameStats) => {
         setPlayerStats(stats);
@@ -61,6 +66,22 @@ function Home({ playerName }) {
         setSelectedUpgradeIndex(selectedIndex);
         setGameStats(newGameStats);
     };
+
+    // Callback to update HUD data from GameLoop
+    const updateHUDDataCallback = useCallback((data) => {
+        setHudData(data);
+    }, []);
+
+    // Callback to add a new hologram effect
+    const addHologramEffect = useCallback((message, x, y, type = 'info') => {
+        const id = Date.now();
+        setHologramEffects((prevEffects) => [...prevEffects, { id, message, x, y, type }]);
+        setTimeout(() => {
+            setHologramEffects((prevEffects) =>
+                prevEffects.filter((effect) => effect.id !== id)
+            );
+        }, 2000); // Hologram disappears after 2 seconds
+    }, []);
 
     const handleUpgrade = (upgrade) => {
         if (gameLoopRef.current) {
@@ -106,6 +127,8 @@ function Home({ playerName }) {
             assetsRef.current,
             setGameState,
             updateUpgradeMenuData,
+            updateHUDDataCallback, // Pass the new HUD update callback
+            addHologramEffect, // Pass the new hologram effect callback
             playerName
         );
         gameLoopRef.current = gameLoop;
@@ -118,7 +141,7 @@ function Home({ playerName }) {
                 gameLoopRef.current = null;
             }
         };
-    }, [assetsLoaded, playerName]);
+    }, [assetsLoaded, playerName, updateHUDDataCallback, addHologramEffect]); // Add addHologramEffect to dependencies
 
     useEffect(() => {
         if (!gameLoopRef.current) return;
@@ -148,6 +171,18 @@ function Home({ playerName }) {
                     onConfirmUpgrade={() => handleUpgrade(upgradeOptions[selectedUpgradeIndex])}
                 />}
             {gameState === 'gameOver' && <GameOver score={gameStats.score} onRestart={handleRestart} />}
+            {gameState === 'playing' && <CockpitHUD {...hudData} />}
+
+            {/* Render hologram effects */}
+            {hologramEffects.map((effect) => (
+                <PowerUpHologram 
+                    key={effect.id} 
+                    message={effect.message} 
+                    x={effect.x} 
+                    y={effect.y} 
+                    type={effect.type} 
+                />
+            ))}
         </div>
     );
 }
