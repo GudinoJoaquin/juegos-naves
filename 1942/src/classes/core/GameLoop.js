@@ -8,57 +8,53 @@ import { BossEnemy } from '../enemies/BossEnemy.js';
 import { ShieldPowerUp, LaserModePowerUp, TankModePowerUp, BoostPowerUp, MovementSpeedPowerUp, FireRatePowerUp, HealthPowerUp } from '../powerups/PowerUp.js';
 
 export class GameLoop {
-    constructor(canvas, inputHandler, assets, updateGameState, updateUpgradeMenuData, playerName, initialUpgrade = null) {
+    constructor(canvas, inputHandler, assets, updateGameState, updateUpgradeMenuData, playerName) {
         this.canvas = canvas;
         this.context = canvas.getContext('2d');
         this.inputHandler = inputHandler;
         this.assets = assets;
-        this.updateGameState = updateGameState; // Callback from Home.jsx
-        this.updateUpgradeMenuData = updateUpgradeMenuData; // Callback from Home.jsx
+        this.updateGameState = updateGameState;
+        this.updateUpgradeMenuData = updateUpgradeMenuData;
 
         this.player = new Player(this.canvas.width / 2 - 25, this.canvas.height - 100, 'Assault', this.assets, playerName);
-        this.applyInitialUpgrade(initialUpgrade);
 
         this.enemies = [];
         this.projectiles = [];
         this.stars = [];
-        this.powerUps = []; // New: Array to hold active power-ups
-        this.powerUpDropChance = 0.2; // 20% chance for a power-up to drop
+        this.powerUps = [];
+        this.powerUpDropChance = 0.2;
         
-        // Categorized Power-ups
         this.commonPowerUps = [MovementSpeedPowerUp, FireRatePowerUp];
         this.rarePowerUps = [ShieldPowerUp, HealthPowerUp];
-        this.epicPowerUps = [LaserModePowerUp, LaserModePowerUp, TankModePowerUp, BoostPowerUp];
+        this.epicPowerUps = [LaserModePowerUp, TankModePowerUp, BoostPowerUp];
 
         this.powerUpSpawnTimer = 0;
-        this.powerUpSpawnInterval = this.generateRandomPowerUpSpawnInterval(); // Initial random interval
+        this.powerUpSpawnInterval = this.generateRandomPowerUpSpawnInterval();
         
         this.isGameOver = false;
         this.initializeStars();
 
-        // Game progression variables
         this.currentLevel = 0;
         this.currentWave = 0;
         this.totalWavesInLevel = 0;
         this.enemiesPerWave = 0;
-        this.enemiesRemainingInWave = 0; // Enemies to kill in current wave to proceed
-        this.enemiesOnScreenCount = 0; // Enemies currently alive on screen
+        this.enemiesRemainingInWave = 0;
+        this.enemiesOnScreenCount = 0;
         this.bossActive = false;
-        this.bossPhase = 0; // For boss fights
-        this.enemySpawnQueue = []; // Enemies waiting to be spawned in the current wave
+        this.bossPhase = 0;
+        this.enemySpawnQueue = [];
         this.enemySpawnTimer = 0;
-        this.enemySpawnInterval = 1000; // ms between enemy spawns in a group
+        this.enemySpawnInterval = 1000;
 
         this.baseEnemyProbabilities = {
-            KamikazeEnemy: 1, // 100%
-            AssaultEnemy: 0.8, // 80%
-            TankEnemy: 0.6, // 60%
-            LaserEnemy: 0.4, // 40%
+            KamikazeEnemy: 1,
+            AssaultEnemy: 0.8,
+            TankEnemy: 0.6,
+            LaserEnemy: 0.4,
         };
         this.currentEnemyProbabilities = { ...this.baseEnemyProbabilities };
 
-        // Game states
-        this._gameState = 'playing'; // Internal state, managed by setter
+        this._gameState = 'loading';
         this.upgradeOptions = [];
         this.selectedUpgradeIndex = 0;
 
@@ -66,7 +62,7 @@ export class GameLoop {
         this.powerUpsCollected = 0;
         this.totalGameTime = 0;
 
-        this.initializeGame(); // Uncommented to start the game properly
+        this.initializeGame();
     }
 
     generateRandomPowerUpSpawnInterval() {
@@ -125,8 +121,37 @@ export class GameLoop {
 
     initializeGame() {
         this.currentLevel = 1;
+        this.generateUpgradeOptions();
+        const gameStats = {
+            score: this.player.score,
+            level: this.currentLevel,
+            enemiesDestroyed: this.enemiesDestroyed,
+            powerUpsCollected: this.powerUpsCollected,
+            totalGameTime: this.totalGameTime
+        };
+        this.updateUpgradeMenuData(this.player.getStats(), this.upgradeOptions, 0, gameStats);
+        this.setGameState('initialUpgrade');
+    }
+
+    startGame(upgrade) {
+        if (upgrade) {
+            upgrade.apply(this.player, upgrade.value);
+            if (upgrade.type === 'hp') {
+                this.player.hp = this.player.maxHp;
+            }
+        }
         this.setupLevel();
-        this.player.transformToLaserMode(this.assets.playerLaser, 60000, this.currentLevel);
+        this.setGameState('playing');
+    }
+
+    applyUpgrade(upgrade) {
+        upgrade.apply(this.player, upgrade.value);
+        if (upgrade.type === 'hp') {
+            this.player.hp = this.player.maxHp;
+        }
+        this.currentLevel++;
+        this.setupLevel();
+        this.setGameState('playing');
     }
 
     setupLevel() {
@@ -277,6 +302,9 @@ export class GameLoop {
     }
 
     loop(timestamp) {
+        if (!this.lastTime) {
+            this.lastTime = timestamp;
+        }
         const deltaTime = timestamp - this.lastTime;
         this.lastTime = timestamp;
 
@@ -285,114 +313,108 @@ export class GameLoop {
 
         if (!this.isGameOver) {
             this.animationFrameId = requestAnimationFrame(this.loop.bind(this));
-        } else {
-            this.drawGameOver();
         }
     }
 
     update(deltaTime) {
-        if (this.isGameOver) return;
+        if (this.isGameOver || this.gameState === 'upgradeMenu' || this.gameState === 'initialUpgrade') {
+            return;
+        }
 
-        if (this.gameState === 'playing') {
-            this.totalGameTime += deltaTime;
-            this.stars.forEach(star => {
-                star.y += star.speed * (deltaTime / 16.67);
-                if (star.y > this.canvas.height) {
-                    star.y = 0;
-                    star.x = Math.random() * this.canvas.width;
-                }
-            });
-
-            this.player.update(this, deltaTime);
-
-            // Update power-ups
-            this.powerUps.forEach(powerUp => powerUp.update(deltaTime, this));
-            this.powerUps = this.powerUps.filter(powerUp => !powerUp.isCollected);
-
-            // Timed power-up spawning
-            this.powerUpSpawnTimer += deltaTime;
-            if (this.powerUpSpawnTimer >= this.powerUpSpawnInterval) {
-                const rand = Math.random();
-                let PowerUpConstructor;
-
-                if (rand < 0.6) { // 60% chance for Common
-                    PowerUpConstructor = this.commonPowerUps[Math.floor(Math.random() * this.commonPowerUps.length)];
-                } else if (rand < 0.9) { // 30% chance for Rare
-                    PowerUpConstructor = this.rarePowerUps[Math.floor(Math.random() * this.rarePowerUps.length)];
-                } else { // 10% chance for Epic
-                    PowerUpConstructor = this.epicPowerUps[Math.floor(Math.random() * this.epicPowerUps.length)];
-                }
-                
-                const x = Math.random() * (this.canvas.width - 50); // Random X position, ensure it's within bounds
-                const y = -50; // Start just above the canvas
-                this.powerUps.push(new PowerUpConstructor(x, y, this.assets));
-                this.powerUpSpawnTimer = 0;
-                this.powerUpSpawnInterval = this.generateRandomPowerUpSpawnInterval(); // New random interval based on rarity
+        this.totalGameTime += deltaTime;
+        const levelSpeedMultiplier = 1 + (this.currentLevel - 1) * 0.1;
+        this.stars.forEach(star => {
+            star.y += star.speed * (deltaTime / 16.67) * levelSpeedMultiplier;
+            if (star.y > this.canvas.height) {
+                star.y = 0;
+                star.x = Math.random() * this.canvas.width;
             }
+        });
 
-            // Handle enemy spawning for current wave
-            if (!this.bossActive && this.currentWave <= this.totalWavesInLevel) {
-                if (this.enemySpawnQueue.length > 0) {
-                    this.enemySpawnTimer += deltaTime;
-                    if (this.enemySpawnTimer >= this.enemySpawnInterval) {
-                        this.spawnEnemyGroup();
-                        this.enemySpawnTimer = 0;
-                    }
-                }
+        this.player.update(this, deltaTime);
+
+        // Update power-ups
+        this.powerUps.forEach(powerUp => powerUp.update(deltaTime, this));
+        this.powerUps = this.powerUps.filter(powerUp => !powerUp.isCollected);
+
+        // Timed power-up spawning
+        this.powerUpSpawnTimer += deltaTime;
+        if (this.powerUpSpawnTimer >= this.powerUpSpawnInterval) {
+            const rand = Math.random();
+            let PowerUpConstructor;
+
+            if (rand < 0.6) { // 60% chance for Common
+                PowerUpConstructor = this.commonPowerUps[Math.floor(Math.random() * this.commonPowerUps.length)];
+            } else if (rand < 0.9) { // 30% chance for Rare
+                PowerUpConstructor = this.rarePowerUps[Math.floor(Math.random() * this.rarePowerUps.length)];
+            } else { // 10% chance for Epic
+                PowerUpConstructor = this.epicPowerUps[Math.floor(Math.random() * this.epicPowerUps.length)];
             }
             
-            this.enemies.forEach(enemy => enemy.update(this, deltaTime));
+            const x = Math.random() * (this.canvas.width - 50); // Random X position, ensure it's within bounds
+            const y = -50; // Start just above the canvas
+            this.powerUps.push(new PowerUpConstructor(x, y, this.assets));
+            this.powerUpSpawnTimer = 0;
+            this.powerUpSpawnInterval = this.generateRandomPowerUpSpawnInterval(); // New random interval based on rarity
+        }
 
-            this.projectiles.forEach(p => p.update(deltaTime, this)); // Pasar el juego a los proyectiles
-
-            this.checkCollisions();
-
-            // Filter out dead enemies and destroyed projectiles
-            this.enemies = this.enemies.filter(e => {
-                if (e.state === 'dead' && e.destructionFrame >= e.destructionFrameCount) {
-                    this.enemiesOnScreenCount--;
-                    this.enemiesDestroyed++; // Increment here
-                    // Randomly spawn a power-up on enemy death
-                    // Removed power-up drop from enemies as per new requirement
-                    if (e instanceof BossEnemy) {
-                        this.bossActive = false;
-                        this.setGameState('upgradeMenu'); // Transition to upgrade menu
-                        this.generateUpgradeOptions();
-                        const gameStats = {
-                            score: this.player.score,
-                            level: this.currentLevel,
-                            enemiesDestroyed: this.enemiesDestroyed,
-                            powerUpsCollected: this.powerUpsCollected,
-                            totalGameTime: this.totalGameTime
-                        };
-                        this.updateUpgradeMenuData(this.player.getStats(), this.upgradeOptions, this.selectedUpgradeIndex, gameStats);
-                    }
-                    return false;
+        // Handle enemy spawning for current wave
+        if (!this.bossActive && this.currentWave <= this.totalWavesInLevel) {
+            if (this.enemySpawnQueue.length > 0) {
+                this.enemySpawnTimer += deltaTime;
+                if (this.enemySpawnTimer >= this.enemySpawnInterval) {
+                    this.spawnEnemyGroup();
+                    this.enemySpawnTimer = 0;
                 }
-                return true;
-            });
-            this.projectiles = this.projectiles.filter(p => !p.isDestroyed);
-            
-            if (this.player.state === 'dead') {
-                this.isGameOver = true;
             }
+        }
+        
+        this.enemies.forEach(enemy => enemy.update(this, deltaTime));
 
-            // Check for wave completion
-            if (!this.bossActive && this.currentWave <= this.totalWavesInLevel && this.enemiesOnScreenCount === 0 && this.enemySpawnQueue.length === 0) {
-                this.startNextWave();
+        this.projectiles.forEach(p => p.update(deltaTime, this)); // Pasar el juego a los proyectiles
+
+        this.checkCollisions();
+
+        // Filter out dead enemies and destroyed projectiles
+        this.enemies = this.enemies.filter(e => {
+            if (e.state === 'dead' && e.destructionFrame >= e.destructionFrameCount) {
+                this.enemiesOnScreenCount--;
+                this.enemiesDestroyed++; // Increment here
+                if (e instanceof BossEnemy) {
+                    this.bossActive = false;
+                    this.setGameState('upgradeMenu'); // Transition to upgrade menu
+                    this.generateUpgradeOptions();
+                    const gameStats = {
+                        score: this.player.score,
+                        level: this.currentLevel,
+                        enemiesDestroyed: this.enemiesDestroyed,
+                        powerUpsCollected: this.powerUpsCollected,
+                        totalGameTime: this.totalGameTime
+                    };
+                    this.updateUpgradeMenuData(this.player.getStats(), this.upgradeOptions, this.selectedUpgradeIndex, gameStats);
+                }
+                return false;
             }
+            return true;
+        });
+        this.projectiles = this.projectiles.filter(p => !p.isDestroyed);
+        
+        if (this.player.state === 'dead') {
+            this.isGameOver = true;
+            this.setGameState('gameOver');
+        }
+
+        // Check for wave completion
+        if (!this.bossActive && this.currentWave <= this.totalWavesInLevel && this.enemiesOnScreenCount === 0 && this.enemySpawnQueue.length === 0) {
+            this.startNextWave();
         }
 
         this.inputHandler.clearPressedKeys(); // Clear pressed keys at the end of update
     }
 
     draw() {
-        // Clear the canvas only if we are playing or game over, not during upgrade menu
-        if (this.gameState === 'playing' || this.isGameOver) {
-            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        }
-
         if (this.gameState === 'playing') {
+            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.context.fillStyle = 'white';
             this.stars.forEach(star => {
                 this.context.fillRect(star.x, star.y, star.size, star.size);
@@ -401,13 +423,10 @@ export class GameLoop {
             this.player.draw(this.context);
             this.enemies.forEach(enemy => enemy.draw(this.context));
             this.projectiles.forEach(p => p.draw(this.context));
-            this.powerUps.forEach(powerUp => powerUp.draw(this.context)); // New: Draw power-ups
+            this.powerUps.forEach(powerUp => powerUp.draw(this.context));
             
             this.drawHUD();
-        } else if (this.isGameOver) {
-            this.drawGameOver();
         }
-        // Upgrade menu is now drawn by React component
     }
     
     drawHUD() {
@@ -418,7 +437,6 @@ export class GameLoop {
         this.context.fillText(`Score: ${this.player.score}`, 10, 60);
         this.context.fillText(`Level: ${this.currentLevel}`, this.canvas.width / 2 - 50, 30);
         
-        // Display active power-up
         if (this.player.activePowerUpType) {
             this.context.fillText(`Power-up: ${this.player.activePowerUpType} (${Math.ceil(this.player.powerUpTimer / 1000)}s)`, this.canvas.width - 250, 60);
         }
@@ -431,15 +449,6 @@ export class GameLoop {
         }
     }
 
-    drawGameOver() {
-        this.context.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.context.fillStyle = 'white';
-        this.context.font = '50px Arial';
-        this.context.textAlign = 'center';
-        this.context.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2);
-    }
-
     generateUpgradeOptions() {
         this.upgradeOptions = [];
         const availableUpgrades = [
@@ -450,10 +459,8 @@ export class GameLoop {
             { type: 'projectileSpeed', description: 'Aumentar Velocidad de Proyectil', apply: (player, value) => player.projectileSpeed += value },
         ];
     
-        // Scale upgrade values based on currentLevel
-        const levelMultiplier = 1 + (this.currentLevel - 1) * 0.1; // 10% increase per level
+        const levelMultiplier = 1 + (this.currentLevel - 1) * 0.1;
     
-        // Select 3 random unique upgrades
         const chosenUpgradeTypes = [];
         while (chosenUpgradeTypes.length < 3 && chosenUpgradeTypes.length < availableUpgrades.length) {
             const randomIndex = Math.floor(Math.random() * availableUpgrades.length);
@@ -494,61 +501,32 @@ export class GameLoop {
             this.upgradeOptions.push({ ...upgradeType, value, description });
         });
     
-        this.selectedUpgradeIndex = 0; // Default selected option
-    }
-
-    applyUpgrade(upgrade) {
-        upgrade.apply(this.player, upgrade.value);
-        // Special handling for maxHp to also increase current hp
-        if (upgrade.type === 'hp') {
-            this.player.hp = this.player.maxHp;
-        }
-        this.setGameState('playing'); // Use setter to update state in Home.jsx
-        this.currentLevel++;
-        this.setupLevel();
-        this.resume();
-    }
-
-    applyInitialUpgrade(upgrade) {
-        if (!upgrade) return;
-        upgrade.apply(this.player, upgrade.value);
-        if (upgrade.type === 'hp') {
-            this.player.hp = this.player.maxHp;
-        }
+        this.selectedUpgradeIndex = 0;
     }
 
     createEnemyWithDifficulty(EnemyConstructor, x, y, assets, game, level) {
         let options = { level: level };
 
-        // Base scaling factor, can be adjusted
-        let scaleFactor = 1 + (level - 1) * 0.1; // 10% increase per level
-        let attackScaleFactor = 1 + (level - 1) * 0.05; // 5% increase for attack related stats
+        let scaleFactor = 1 + (level - 1) * 0.1;
+        let attackScaleFactor = 1 + (level - 1) * 0.05;
 
-        // --- NEW DIFFICULTY ADJUSTMENT ---
-        // Apply a base difficulty reduction for common enemies at lower levels
         if (EnemyConstructor !== BossEnemy) {
-            // Example: Start common enemies at 70% of their base stats at level 1
-            // and gradually increase this multiplier to 1 over 5 levels.
-            const initialDifficultyReduction = 0.7; // Start at 70% of base stats
-            const difficultyRampUpLevels = 5; // Over how many levels to reach full base stats
-
-            // This multiplier will go from initialDifficultyReduction to 1 over difficultyRampUpLevels
+            const initialDifficultyReduction = 0.7;
+            const difficultyRampUpLevels = 5;
             const currentReductionMultiplier = Math.min(1, initialDifficultyReduction + (1 - initialDifficultyReduction) * ((level - 1) / difficultyRampUpLevels));
-
             scaleFactor *= currentReductionMultiplier;
             attackScaleFactor *= currentReductionMultiplier;
         }
-        // --- END NEW DIFFICULTY ADJUSTMENT ---
 
         switch (EnemyConstructor) {
             case AssaultEnemy:
                 options.hp = Math.floor(30 * scaleFactor);
                 options.speed = 2.5 * scaleFactor;
                 options.scoreValue = Math.floor(40 * scaleFactor);
-                options.burstShots = Math.floor(3 + (level - 1) * 0.5); // More shots
-                options.projectileWidth = Math.floor(30 * attackScaleFactor); // Larger projectiles
-                options.projectileHeight = Math.floor(5 * attackScaleFactor); // Larger projectiles
-                options.projectileDamage = Math.floor(5 * attackScaleFactor); // More damage
+                options.burstShots = Math.floor(3 + (level - 1) * 0.5);
+                options.projectileWidth = Math.floor(30 * attackScaleFactor);
+                options.projectileHeight = Math.floor(5 * attackScaleFactor);
+                options.projectileDamage = Math.floor(5 * attackScaleFactor);
                 break;
             case KamikazeEnemy:
                 options.hp = Math.floor(20 * scaleFactor);
@@ -561,30 +539,29 @@ export class GameLoop {
                 options.hp = Math.floor(120 * scaleFactor);
                 options.speed = 1.5 * scaleFactor;
                 options.scoreValue = Math.floor(250 * scaleFactor);
-                options.laserWidth = Math.floor(20 * attackScaleFactor); // Wider laser
-                options.laserCooldown = Math.floor(2000 / attackScaleFactor); // Less cooldown
+                options.laserWidth = Math.floor(20 * attackScaleFactor);
+                options.laserCooldown = Math.floor(2000 / attackScaleFactor);
                 options.laserDuration = Math.floor(1500 * attackScaleFactor);
                 break;
             case TankEnemy:
-                options.hp = Math.floor(200 * scaleFactor); // Reduced base HP from 300 to 200
-                options.speed = 0.8 * scaleFactor; // Made slower
+                options.hp = Math.floor(200 * scaleFactor);
+                options.speed = 0.8 * scaleFactor;
                 options.scoreValue = Math.floor(300 * scaleFactor);
                 options.grenadeDamage = Math.floor(30 * attackScaleFactor);
-                options.burstShots = Math.floor(2 + (level - 1) * 0.5); // Fewer initial grenades
-                options.grenadeSpeed = Math.floor(3 * attackScaleFactor); // Faster grenades
+                options.burstShots = Math.floor(2 + (level - 1) * 0.5);
+                options.grenadeSpeed = Math.floor(3 * attackScaleFactor);
                 options.grenadeRadius = Math.floor(50 * attackScaleFactor);
                 break;
             case BossEnemy:
-                // Boss stats are not affected by the initialDifficultyReduction
                 options.hp = Math.floor(1200 * scaleFactor);
                 options.speed = 1.2 * scaleFactor;
                 options.scoreValue = Math.floor(5000 * scaleFactor);
                 options.orbDamage = Math.floor(20 * attackScaleFactor);
                 options.blackholeDamage = Math.floor(40 * attackScaleFactor);
                 options.gunDamage = Math.floor(8 * attackScaleFactor);
-                options.orbCount = Math.floor(20 + (level - 1) * 1); // More orbs
-                options.orbSpeed = Math.floor(3 * attackScaleFactor); // Faster orbs
-                options.blackholeMaxRadius = Math.floor(50 * attackScaleFactor); // Larger blackhole
+                options.orbCount = Math.floor(20 + (level - 1) * 1);
+                options.orbSpeed = Math.floor(3 * attackScaleFactor);
+                options.blackholeMaxRadius = Math.floor(50 * attackScaleFactor);
                 options.gunDuration = Math.floor(3000 * attackScaleFactor);
                 break;
         }
@@ -593,7 +570,6 @@ export class GameLoop {
 
     addProjectile(projectile) {
         if (projectile) {
-            // If projectile is an array, add all elements
             if (Array.isArray(projectile)) {
                 this.projectiles.push(...projectile);
             } else {
@@ -603,7 +579,6 @@ export class GameLoop {
     }
 
     checkCollisions() {
-        // Proyectiles del jugador vs enemigos
         this.projectiles.forEach(p => {
             if (p.owner === 'player') {
                 this.enemies.forEach(e => {
@@ -618,7 +593,6 @@ export class GameLoop {
             }
         });
 
-        // Proyectiles enemigos vs jugador
         this.projectiles.forEach(p => {
             if (p.owner === 'enemy' && this.player.state === 'alive') {
                 if (this.isColliding(p, this.player)) {
@@ -628,24 +602,22 @@ export class GameLoop {
             }
         });
 
-        // Enemigos vs jugador
         this.enemies.forEach(e => {
             if (e.state === 'alive' && this.player.state === 'alive') {
                 if (this.isColliding(e, this.player)) {
                     if (!(e instanceof BossEnemy)) {
-                        e.takeDamage(e.hp); // Enemy takes full damage and dies on collision
+                        e.takeDamage(e.hp);
                     }
-                    this.player.takeDamage(20); // Player takes damage from collision
+                    this.player.takeDamage(20);
                 }
             }
         });
 
-        // Player vs Power-ups
         this.powerUps.forEach(powerUp => {
             if (!powerUp.isCollected && this.isColliding(this.player, powerUp)) {
-                powerUp.apply(this.player, this); // Pass 'this' (GameLoop instance) as the game object
+                powerUp.apply(this.player, this);
                 powerUp.isCollected = true;
-                this.powerUpsCollected++; // Increment here
+                this.powerUpsCollected++;
             }
         });
     }
