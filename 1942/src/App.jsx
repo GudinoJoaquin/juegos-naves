@@ -5,10 +5,10 @@ import StartScreen from "./components/StartScreen";
 
 export default function App() {
   const [gameStarted, setGameStarted] = useState(false);
-  const [playerName, setPlayerName] = useState("");
+  const [playerNames, setPlayerNames] = useState([]); // Changed from playerName
 
-  const handleStartGame = (name) => {
-    setPlayerName(name);
+  const handleStartGame = (names) => {
+    setPlayerNames(names);
     setGameStarted(true);
   };
 
@@ -18,7 +18,7 @@ export default function App() {
         <StartScreen onStartGame={handleStartGame} />
       ) : (
         <Routes>
-          <Route path="/" element={<Home playerName={playerName} />} />
+          <Route path="/" element={<Home playerNames={playerNames} />} /> // Pass playerNames
         </Routes>
       )}
     </>

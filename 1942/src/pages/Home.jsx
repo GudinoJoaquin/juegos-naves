@@ -1,10 +1,11 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { GameLoop } from '../classes/core/GameLoop.js';
-import { InputHandler } from '../classes/player/InputHandler.js';
-import UpgradeMenu from '../components/UpgradeMenu.jsx';
-import GameOver from '../components/GameOver.jsx';
-import CockpitHUD from '../components/CockpitHUD.jsx'; // Import CockpitHUD
-import PowerUpHologram from '../components/PowerUpHologram.jsx'; // Import PowerUpHologram
+import { GameLoop } from '/src/classes/core/GameLoop.js';
+import { InputHandler } from '/src/classes/player/InputHandler.js';
+import UpgradeMenu from '/src/components/UpgradeMenu.jsx';
+import GameOver from '/src/components/GameOver.jsx';
+import CockpitHUD from '/src/components/CockpitHUD.jsx';
+import PlayerSwitchScreen from '/src/components/PlayerSwitchScreen.jsx';
+import PowerUpHologram from '/src/components/PowerUpHologram.jsx';
 
 const assetConfig = {
     playerAssault: { path: '/assets/Player/Assault/1/', frames: 5 },
@@ -46,7 +47,7 @@ async function loadAssets() {
     return loadedAssets;
 }
 
-function Home({ playerName }) {
+function Home({ playerNames }) {
     const canvasRef = useRef(null);
     const gameLoopRef = useRef(null);
     const assetsRef = useRef(null);
@@ -129,7 +130,7 @@ function Home({ playerName }) {
             updateUpgradeMenuData,
             updateHUDDataCallback, // Pass the new HUD update callback
             addHologramEffect, // Pass the new hologram effect callback
-            playerName
+            playerNames
         );
         gameLoopRef.current = gameLoop;
         gameLoop.start();
@@ -141,12 +142,12 @@ function Home({ playerName }) {
                 gameLoopRef.current = null;
             }
         };
-    }, [assetsLoaded, playerName, updateHUDDataCallback, addHologramEffect]); // Add addHologramEffect to dependencies
+    }, [assetsLoaded, playerNames, updateHUDDataCallback, addHologramEffect]);
 
     useEffect(() => {
         if (!gameLoopRef.current) return;
 
-        if (gameState === 'playing') {
+        if (gameState === 'playing' || gameState === 'switchingPlayer') {
             gameLoopRef.current.resume();
         } else if (gameState === 'upgradeMenu' || gameState === 'initialUpgrade' || gameState === 'loading') {
             gameLoopRef.current.pause();
@@ -171,6 +172,7 @@ function Home({ playerName }) {
                     onConfirmUpgrade={() => handleUpgrade(upgradeOptions[selectedUpgradeIndex])}
                 />}
             {gameState === 'gameOver' && <GameOver score={gameStats.score} onRestart={handleRestart} />}
+            {gameState === 'switchingPlayer' && <PlayerSwitchScreen nextPlayerName={hudData.switchingToPlayer} countdown={hudData.countdown} />}
             {gameState === 'playing' && <CockpitHUD {...hudData} />}
 
             {/* Render hologram effects */}

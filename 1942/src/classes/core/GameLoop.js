@@ -8,17 +8,22 @@ import { BossEnemy } from '../enemies/BossEnemy.js';
 import { ShieldPowerUp, LaserModePowerUp, TankModePowerUp, BoostPowerUp, MovementSpeedPowerUp, FireRatePowerUp, HealthPowerUp } from '../powerups/PowerUp.js';
 
 export class GameLoop {
-    constructor(canvas, inputHandler, assets, updateGameState, updateUpgradeMenuData, updateHUDData, addHologramEffect, playerName) {
+    constructor(canvas, inputHandler, assets, updateGameState, updateUpgradeMenuData, updateHUDData, addHologramEffect, playerNames) {
         this.canvas = canvas;
         this.context = canvas.getContext('2d');
         this.inputHandler = inputHandler;
         this.assets = assets;
         this.updateGameState = updateGameState;
         this.updateUpgradeMenuData = updateUpgradeMenuData;
-        this.updateHUDData = updateHUDData; // New callback for HUD data
-        this.addHologramEffect = addHologramEffect; // New callback for hologram effects
+        this.updateHUDData = updateHUDData;
+        this.addHologramEffect = addHologramEffect;
 
-        this.player = new Player(this.canvas.width / 2 - 25, this.canvas.height - 100, 'Assault', this.assets, playerName);
+        this.playerNames = playerNames;
+        this.players = this.playerNames.map(name => 
+            new Player(this.canvas.width / 2 - 25, this.canvas.height - 100, 'Assault', this.assets, name)
+        );
+        this.currentPlayerIndex = 0;
+        this.player = this.players[this.currentPlayerIndex];
 
         this.enemies = [];
         this.projectiles = [];
@@ -63,6 +68,10 @@ export class GameLoop {
         this.enemiesDestroyed = 0;
         this.powerUpsCollected = 0;
         this.totalGameTime = 0;
+
+        // State for switching players
+        this.switchPlayerCountdown = 0;
+        this.timeToSwitchPlayer = 3000; // 3 seconds
 
         this.initializeGame();
     }
@@ -125,7 +134,7 @@ export class GameLoop {
         this.currentLevel = 1;
         this.generateUpgradeOptions();
         const gameStats = {
-            score: this.player.score,
+            score: 0, // Start with 0 score for display
             level: this.currentLevel,
             enemiesDestroyed: this.enemiesDestroyed,
             powerUpsCollected: this.powerUpsCollected,
@@ -323,6 +332,19 @@ export class GameLoop {
             return;
         }
 
+        if (this.gameState === 'switchingPlayer') {
+            this.switchPlayerCountdown -= deltaTime;
+            if (this.switchPlayerCountdown <= 0) {
+                this.currentPlayerIndex++;
+                this.player = this.players[this.currentPlayerIndex];
+                this.player.reset(); // Resetea la posición y vida del nuevo jugador
+                this.setupLevel(); // Reinicia el nivel para el nuevo jugador
+                this.setGameState('playing');
+            }
+            this.updateHUDData({ switchingToPlayer: this.playerNames[this.currentPlayerIndex + 1], countdown: Math.ceil(this.switchPlayerCountdown / 1000) });
+            return;
+        }
+
         this.totalGameTime += deltaTime;
         const levelSpeedMultiplier = 1 + (this.currentLevel - 1) * 0.1;
         this.stars.forEach(star => {
@@ -402,8 +424,13 @@ export class GameLoop {
         this.projectiles = this.projectiles.filter(p => !p.isDestroyed);
         
         if (this.player.state === 'dead') {
-            this.isGameOver = true;
-            this.setGameState('gameOver');
+            if (this.currentPlayerIndex < this.players.length - 1) {
+                this.setGameState('switchingPlayer');
+                this.switchPlayerCountdown = this.timeToSwitchPlayer;
+            } else {
+                this.isGameOver = true;
+                this.setGameState('gameOver');
+            }
         }
 
         // Check for wave completion
@@ -430,19 +457,16 @@ export class GameLoop {
     }
 
     draw() {
-        if (this.gameState === 'playing') {
+        if (this.gameState === 'playing' || this.gameState === 'switchingPlayer') {
             this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.context.fillStyle = 'white';
             this.stars.forEach(star => {
                 this.context.fillRect(star.x, star.y, star.size, star.size);
             });
-
             this.player.draw(this.context);
             this.enemies.forEach(enemy => enemy.draw(this.context));
             this.projectiles.forEach(p => p.draw(this.context));
             this.powerUps.forEach(powerUp => powerUp.draw(this.context));
-            
-            // No longer drawing HUD here, it's handled by React component
         }
     }
 
