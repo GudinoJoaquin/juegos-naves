@@ -1,0 +1,191 @@
+/* ScoreScreen.css */
+
+.score-screen-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    font-family: 'Arial', sans-serif;
+    z-index: 110;
+    padding: 1rem;
+}
+
+/* Estilo inspirado en UpgradeMenu.css */
+.score-screen-content {
+    text-align: center;
+    background: rgba(20, 20, 40, 0.9);
+    padding: 2rem 3rem;
+    border-radius: 15px;
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3) inset;
+    border: 2px solid rgba(0, 255, 255, 0.7);
+    width: 90vw; /* Usar ancho de la ventana */
+    max-width: 1200px; /* Pero con un límite */
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    /* Se eliminan max-height y overflow-y para evitar el scroll */
+}
+
+/* Título similar a UpgradeMenu.css */
+.score-screen-title {
+    font-size: 2.8rem;
+    color: #ff00ff;
+    text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
+    margin-bottom: 1rem;
+}
+
+/* Nuevo contenedor para el cuerpo principal */
+.score-screen-body {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    gap: 2rem;
+    width: 100%;
+}
+
+.players-panels-container {
+    display: flex;
+    gap: 2rem;
+    flex: 2; /* Ocupa más espacio */
+    justify-content: center;
+}
+
+/* Estilo de panel de jugador similar a UpgradeMenu.css */
+.player-panel {
+    background: rgba(0, 240, 255, 0.07);
+    border: 2px solid #00eaff;
+    box-shadow: 0 0 10px #00eaff, 0 0 20px rgba(0, 234, 255, 0.6);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    color: #00ffff;
+    flex: 1; /* Permite que los paneles crezcan */
+    min-width: 320px;
+}
+
+.player-name {
+    font-size: 1.8rem;
+    color: #00eaff;
+    text-shadow: 0 0 8px #00eaff;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(0, 234, 255, 0.5);
+    padding-bottom: 0.5rem;
+}
+
+.player-card-content {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.player-ship-display {
+    text-align: center;
+}
+
+.player-ship-display img {
+    width: 100px; /* Un poco más grande */
+    height: 100px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 10px #00eaff);
+    margin-bottom: 0.5rem;
+}
+
+.ship-type {
+    font-size: 1rem;
+    color: #e0e0e0;
+    text-transform: capitalize;
+}
+
+.player-stats-list {
+    text-align: left;
+    font-size: 1.1rem; /* Fuente un poco más grande */
+}
+
+.player-stats-list p {
+    margin: 0.5rem 0;
+}
+
+/* Panel de resumen del juego */
+.game-summary-panel {
+    background: rgba(255, 0, 255, 0.07);
+    border: 2px solid #ff00ff;
+    box-shadow: 0 0 10px #ff00ff, 0 0 20px rgba(255, 0, 255, 0.6);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    color: #ff99ff;
+    flex: 1; /* Ocupa el espacio restante */
+    max-width: 350px;
+}
+
+.game-summary-panel h3 {
+    font-size: 1.8rem;
+    color: #ff00ff;
+    text-shadow: 0 0 8px #ff00ff;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 0, 255, 0.5);
+    padding-bottom: 0.5rem;
+}
+
+.game-summary-panel p {
+    font-size: 1.1rem;
+    margin: 0.5rem 0;
+    text-align: left;
+}
+
+.score-screen-button {
+    background: transparent;
+    border: 2px solid #00ff00;
+    color: #00ff00;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px #00ff00;
+    text-transform: uppercase;
+    align-self: center;
+    margin-top: 1rem;
+    font-weight: bold;
+}
+
+.score-screen-button:hover {
+    background: #00ff00;
+    color: #1a1a2e;
+    box-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00;
+}
+
+/* Animación de rebote para el botón */
+.animate-bounce-slow {
+    animation: bounce-slow 2s infinite;
+}
+
+@keyframes bounce-slow {
+    0%, 100% {
+        transform: translateY(-5%);
+        animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+        transform: translateY(0);
+        animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+}
+
+/* Diseño responsivo para pantallas más pequeñas */
+@media (max-width: 900px) {
+    .score-screen-body {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .players-panels-container {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .game-summary-panel {
+        width: 100%;
+        max-width: none;
+    }
+}

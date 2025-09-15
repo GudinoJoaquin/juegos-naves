@@ -5,6 +5,7 @@ import UpgradeMenu from '/src/components/UpgradeMenu.jsx';
 import GameOver from '/src/components/GameOver.jsx';
 import CockpitHUD from '/src/components/CockpitHUD.jsx';
 import PlayerSwitchScreen from '/src/components/PlayerSwitchScreen.jsx';
+import ScoreScreen from '/src/components/ScoreScreen.jsx';
 import PowerUpHologram from '/src/components/PowerUpHologram.jsx';
 
 const assetConfig = {
@@ -60,6 +61,8 @@ function Home({ playerNames }) {
     const [assetsLoaded, setAssetsLoaded] = useState(false);
     const [hudData, setHudData] = useState({}); // New state for HUD data
     const [hologramEffects, setHologramEffects] = useState([]); // State for hologram effects
+    const [viewingScore, setViewingScore] = useState(false);
+    const [finalPlayersData, setFinalPlayersData] = useState([]);
 
     const updateUpgradeMenuData = (stats, options, selectedIndex, newGameStats) => {
         setPlayerStats(stats);
@@ -96,6 +99,27 @@ function Home({ playerNames }) {
 
     const handleRestart = () => {
         window.location.reload();
+    };
+
+    const handleViewScore = () => {
+        if (gameLoopRef.current) {
+            const allPlayersData = gameLoopRef.current.players.map(p => ({
+                name: p.name,
+                score: p.score,
+                shipType: p.originalStats.shipType, // Usar el tipo de nave original
+                stats: p.getStats(),
+            }));
+            setFinalPlayersData(allPlayersData);
+
+            // Actualizar gameStats con los datos finales del GameLoop
+            setGameStats({
+                ...gameStats,
+                enemiesDestroyed: gameLoopRef.current.enemiesDestroyed,
+                powerUpsCollected: gameLoopRef.current.powerUpsCollected,
+                totalGameTime: gameLoopRef.current.totalGameTime,
+            });
+        }
+        setViewingScore(true);
     };
 
     useEffect(() => {
@@ -171,7 +195,19 @@ function Home({ playerNames }) {
                     selectedUpgradeIndex={selectedUpgradeIndex}
                     onConfirmUpgrade={() => handleUpgrade(upgradeOptions[selectedUpgradeIndex])}
                 />}
-            {gameState === 'gameOver' && <GameOver score={gameStats.score} onRestart={handleRestart} />}
+            {gameState === 'gameOver' && !viewingScore && (
+                <GameOver 
+                    onRestart={handleRestart} 
+                    onViewScore={handleViewScore} 
+                />
+            )}
+            {gameState === 'gameOver' && viewingScore && (
+                <ScoreScreen 
+                    playersData={finalPlayersData}
+                    gameData={gameStats}
+                    onExit={() => setViewingScore(false)}
+                />
+            )}
             {gameState === 'switchingPlayer' && <PlayerSwitchScreen nextPlayerName={hudData.switchingToPlayer} countdown={hudData.countdown} />}
             {gameState === 'playing' && <CockpitHUD {...hudData} />}
 
