@@ -1,6 +1,8 @@
 :root {
-    --holo-primary: #00f0ff;
-    --holo-glow: 0 0 8px var(--holo-primary), 0 0 20px rgba(0, 240, 255, 0.6);
+    --holo-primary: #00eaff; /* Cyan primary color */
+    --holo-secondary: #ff00ff; /* Magenta secondary color */
+    --holo-glow-cyan: 0 0 10px var(--holo-primary), 0 0 20px rgba(0, 234, 255, 0.6);
+    --holo-glow-magenta: 0 0 10px var(--holo-secondary), 0 0 20px rgba(255, 0, 255, 0.6);
     --stat-color: #00ffff;
 }
 
@@ -8,49 +10,112 @@
 .upgrade-menu-container {
     position: fixed;
     inset: 0;
-    background: radial-gradient(circle at center, rgba(0,0,20,0.95), rgba(0,0,0,1));
+    background: radial-gradient(circle at center, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.98) 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    padding: 1rem;
-    font-family: 'Press Start 2P', monospace;
+    justify-content: flex-start; /* Changed to flex-start to allow content to start from top */
+    padding: 0.5rem; /* Reduced padding */
+    font-family: 'Arial', sans-serif; /* Consistent font */
     z-index: 50;
+    color: white;
+    overflow-y: auto; /* Allow scrolling on small screens */
+}
+
+.upgrade-menu-content {
+    text-align: center;
+    background: rgba(20, 20, 40, 0.85); /* Dark blue background */
+    padding: 20px 25px; /* Reduced padding */
+    border-radius: 15px;
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3) inset;
+    border: 2px solid rgba(0, 255, 255, 0.7);
+    transform: perspective(1000px) rotateX(15deg); /* 3D effect */
+    position: relative;
+    max-width: 95%; /* Responsive width */
+    width: 1000px; /* Max width for larger screens */
+    display: flex;
+    flex-direction: column;
+    gap: 1rem; /* Reduced gap */
+}
+
+.upgrade-menu-content::before, .upgrade-menu-content::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.7), transparent);
+    animation: scanline 7s linear infinite;
+}
+
+.upgrade-menu-content::before {
+    top: 10%;
+}
+
+.upgrade-menu-content::after {
+    bottom: 10%;
+    animation-delay: 3.5s;
+}
+
+@keyframes scanline {
+    0% { transform: translateY(-20px); opacity: 0.3; }
+    50% { transform: translateY(20px); opacity: 1; }
+    100% { transform: translateY(-20px); opacity: 0.3; }
 }
 
 /* Título */
 .upgrade-menu-title {
-    font-size: 1.8rem;
+    font-size: 3rem;
     font-weight: 700;
-    color: var(--holo-primary);
-    text-shadow: var(--holo-glow);
-    margin-bottom: 1rem;
+    color: var(--holo-secondary); /* Magenta title */
+    text-shadow: var(--holo-glow-magenta);
+    margin-bottom: 1rem; /* Reduced margin */
     animation: flicker 1.5s infinite alternate;
+}
+
+@keyframes flicker {
+    0%, 18%, 22%, 25%, 53%, 57%, 100% {
+        text-shadow:
+            0 0 4px var(--holo-secondary),
+            0 0 11px var(--holo-secondary),
+            0 0 19px var(--holo-secondary),
+            0 0 40px var(--holo-secondary),
+            0 0 80px var(--holo-secondary),
+            0 0 90px var(--holo-secondary),
+            0 0 100px var(--holo-secondary),
+            0 0 150px var(--holo-secondary);
+    }
+    20%, 24%, 55% {
+        text-shadow: none;
+    }
 }
 
 /* Contenido central */
 .upgrade-content-area {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    justify-content: space-around; /* Distribute space evenly */
+    align-items: flex-start; /* Align items to the start */
     width: 100%;
-    max-width: 72rem;
-    gap: 1rem;
+    max-width: 1200px; /* Increased max-width */
+    gap: 1.5rem; /* Reduced gap */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
 }
 
 /* Panel de stats holográfico */
 .player-stats-panel {
     background: rgba(0, 240, 255, 0.07);
-    border: 1px solid var(--holo-primary);
-    box-shadow: var(--holo-glow);
+    border: 2px solid var(--holo-primary);
+    box-shadow: var(--holo-glow-cyan);
     backdrop-filter: blur(8px);
-    padding: 1rem;
+    padding: 1rem; /* Reduced padding */
     border-radius: 1rem;
     color: var(--stat-color);
-    width: 25%;
-    font-size: 0.75rem;
+    width: 30%; /* Adjusted width */
+    min-width: 200px; /* Reduced min-width */
+    font-size: 0.8rem; /* Reduced font size */
     transform: perspective(800px) rotateY(-6deg) rotateX(2deg);
     animation: float 3s ease-in-out infinite;
+    box-sizing: border-box;
 }
 
 .player-stats-panel.right {
@@ -59,15 +124,15 @@
 }
 
 .player-stats-panel h2 {
-    font-size: 0.85rem;
+    font-size: 1.1rem; /* Reduced font size */
     color: var(--holo-primary);
-    text-shadow: var(--holo-glow);
-    margin-bottom: 0.5rem;
+    text-shadow: var(--holo-glow-cyan);
+    margin-bottom: 0.8rem; /* Reduced margin */
 }
 
 /* Stats */
 .stat-item {
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.4rem; /* Reduced margin */
     display: flex;
     justify-content: space-between;
 }
@@ -86,30 +151,31 @@
 /* Nave holográfica */
 .player-ship-hologram {
     position: relative;
-    width: 14rem;
-    height: 14rem;
-    border: 2px solid var(--holo-primary);
+    width: 15rem; /* Reduced size */
+    height: 15rem;
+    border: 3px solid var(--holo-primary);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     animation: pulse 2s infinite, float 4s ease-in-out infinite;
     background: rgba(0, 240, 255, 0.05);
-    box-shadow: var(--holo-glow);
+    box-shadow: var(--holo-glow-cyan);
     transform: perspective(900px) rotateY(12deg) rotateX(6deg);
+    flex-shrink: 0; /* Prevent shrinking */
 }
 
 .player-ship-hologram img {
-    width: 8rem;
-    height: 8rem;
+    width: 10rem; /* Reduced image size */
+    height: 10rem;
     object-fit: contain;
-    filter: drop-shadow(0 0 12px var(--holo-primary));
+    filter: drop-shadow(0 0 15px var(--holo-primary));
 }
 
 .player-ship-hologram-border {
     position: absolute;
     inset: 0;
-    border: 1px solid var(--holo-primary);
+    border: 2px solid var(--holo-primary);
     border-radius: 50%;
     animation: ping 2s infinite;
 }
@@ -118,61 +184,76 @@
 .upgrade-cards-container {
     display: flex;
     justify-content: center;
-    gap: 1rem;
-    margin-top: 1rem;
+    gap: 1rem; /* Reduced gap */
+    margin-top: 1.5rem; /* Reduced margin */
     width: 100%;
-    overflow-x: hidden; /* evita scroll al hover */
-    flex-wrap: wrap; /* para pantallas pequeñas */
+    flex-wrap: wrap;
 }
 
 .upgrade-card {
     background: rgba(0, 240, 255, 0.08);
-    border: 1px solid var(--holo-primary);
-    box-shadow: var(--holo-glow);
+    border: 2px solid var(--holo-primary);
+    box-shadow: var(--holo-glow-cyan);
     color: var(--stat-color);
-    padding: 0.75rem;
+    padding: 0.8rem; /* Reduced padding */
     border-radius: 1rem;
     text-align: center;
     cursor: pointer;
-    flex: 0 0 12rem; /* ancho fijo */
-    height: 6.5rem; /* altura fija */
+    flex: 0 0 12rem; /* Reduced card size */
+    height: 7rem; /* Reduced card height */
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     perspective: 800px;
     transition: box-shadow 0.3s ease, transform 0.3s ease;
+    box-sizing: border-box; /* Ensure padding and border are included in the width */
 }
 
 .upgrade-card:hover {
-    transform: rotateY(8deg) rotateX(4deg); /* solo rotación 3D */
-    box-shadow: 0 0 28px var(--holo-primary), 0 0 40px rgba(0, 240, 255, 0.5);
+    transform: rotateY(8deg) rotateX(4deg) scale(1.03); /* Added slight scale on hover */
+    box-shadow: 0 0 35px var(--holo-primary), 0 0 50px rgba(0, 240, 255, 0.7);
 }
 
 .upgrade-card.selected {
-    border-color: var(--holo-primary);
-    box-shadow: 0 0 32px var(--holo-primary), 0 0 48px rgba(0, 240, 255, 0.6);
+    border-color: var(--holo-secondary); /* Magenta border for selected */
+    box-shadow: 0 0 35px var(--holo-secondary), 0 0 50px rgba(255, 0, 255, 0.7);
+}
+
+.upgrade-card h3 {
+    font-size: 1rem; /* Reduced font size */
+    color: var(--holo-primary);
+    text-shadow: var(--holo-glow-cyan);
+    margin-bottom: 0.2rem; /* Reduced margin */
+}
+
+.upgrade-value-description {
+    font-size: 0.9rem; /* New style for value description */
+    color: #e0e0e0;
+    margin-top: 0;
 }
 
 /* Botón holográfico */
 .confirm-button {
-    margin-top: 1rem;
-    padding: 1rem 2rem;
-    background: rgba(0, 240, 255, 0.08);
-    border: 2px solid var(--holo-primary);
+    margin-top: 1.5rem; /* Reduced margin */
+    padding: 0.8rem 2rem; /* Reduced padding */
+    background: rgba(0, 255, 0, 0.1); /* Greenish background */
+    border: 2px solid #00ff00; /* Green border */
     border-radius: 1rem;
-    color: var(--holo-primary);
+    color: #00ff00;
     font-weight: bold;
-    font-size: 0.95rem;
-    text-shadow: var(--holo-glow);
+    font-size: 1rem; /* Reduced font size */
+    text-shadow: 0 0 10px #00ff00, 0 0 20px rgba(0, 255, 0, 0.6);
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: var(--holo-glow);
+    box-shadow: 0 0 15px #00ff00;
     backdrop-filter: blur(8px);
+    text-transform: uppercase;
 }
 
 .confirm-button:hover {
-    transform: rotateX(4deg) rotateY(-2deg); /* rotación 3D sin escalar */
-    box-shadow: 0 0 30px var(--holo-primary), 0 0 45px rgba(0, 240, 255, 0.5);
+    transform: scale(1.05) rotateX(2deg); /* Slight scale and rotate on hover */
+    box-shadow: 0 0 25px #00ff00, 0 0 40px rgba(0, 255, 0, 0.8);
 }
 
 /* Animaciones */
@@ -183,8 +264,8 @@
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
+    0%, 100% { transform: translateY(0) perspective(800px) rotateY(-6deg) rotateX(2deg); }
+    50% { transform: translateY(-8px) perspective(800px) rotateY(-6deg) rotateX(2deg); }
 }
 
 @keyframes pulse {
@@ -198,20 +279,250 @@
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
+    .upgrade-menu-content {
+        padding: 25px 30px;
+        width: 95%;
+        gap: 1rem;
+    }
+
     .upgrade-content-area {
         flex-direction: column;
-        gap: 1.5rem;
+        align-items: center;
+        gap: 1rem;
     }
+
     .player-stats-panel {
-        width: 100%;
+        width: 90%;
+        transform: none; /* Remove 3D transform on smaller screens */
         text-align: center;
-        transform: none;
+        min-width: unset; /* Remove min-width */
     }
+
     .player-stats-panel.right {
         transform: none;
     }
+
+    .player-ship-hologram {
+        width: 12rem;
+        height: 12rem;
+        transform: none; /* Remove 3D transform */
+    }
+
+    .player-ship-hologram img {
+        width: 8rem;
+        height: 8rem;
+    }
+
     .upgrade-cards-container {
-        overflow-x: auto;
+        gap: 0.8rem;
+    }
+
+    .upgrade-card {
+        flex: 0 0 10rem;
+        height: 6rem;
+    }
+
+    .upgrade-menu-title {
+        font-size: 2rem;
+    }
+
+    .confirm-button {
+        padding: 0.7rem 1.8rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .upgrade-menu-content {
+        padding: 15px 20px;
+        transform: none; /* Removed 3D transform */
+        gap: 0.8rem;
+    }
+
+    .upgrade-menu-title {
+        font-size: 1.8rem;
+    }
+
+    .player-stats-panel {
+        width: 100%;
+        padding: 0.8rem;
+        font-size: 0.7rem;
+    }
+
+    .player-stats-panel h2 {
+        font-size: 0.9rem;
+    }
+
+    .player-ship-hologram {
+        width: 10rem;
+        height: 10rem;
+    }
+
+    .player-ship-hologram img {
+        width: 7rem;
+        height: 7rem;
+    }
+
+    .upgrade-cards-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .upgrade-card {
+        width: 90%; /* Increased width to fill more space */
+        flex: unset; /* Remove flex-basis */
+        height: auto;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem; /* Added margin for spacing */
+    }
+
+    .upgrade-card h3 {
+        font-size: 1rem; /* Slightly larger font size */
+    }
+
+    .upgrade-value-description {
+        font-size: 0.8rem; /* Slightly larger font size */
+    }
+
+    .confirm-button {
+        padding: 0.6rem 1.5rem;
+        font-size: 0.85rem;
+    }
+
+    .upgrade-menu-content::before, .upgrade-menu-content::after {
+        height: 2px; /* Thinner scanlines */
+    }
+}
+
+@media (max-width: 480px) {
+    .upgrade-menu-container {
+        padding: 0.2rem; /* Even less padding */
+    }
+
+    .upgrade-menu-content {
+        padding: 10px 10px; /* Even less padding */
+        width: 98%; /* Adjusted width to fill more space */
+        max-width: 98%; /* Adjusted max-width */
+        gap: 0.5rem; /* Even less gap */
+    }
+
+    .upgrade-menu-title {
+        font-size: 1.2rem; /* Significantly smaller font size */
+        margin-bottom: 0.5rem;
+    }
+
+    .upgrade-content-area {
+        gap: 0.5rem; /* Even less gap */
+    }
+
+    .player-stats-panel {
+        width: 98%; /* Adjusted width to fill more space */
+        padding: 0.5rem; /* Significantly reduced padding */
+        font-size: 0.65rem; /* Significantly smaller font size */
+    }
+
+    .player-stats-panel h2 {
+        font-size: 0.8rem; /* Significantly smaller font size */
+        margin-bottom: 0.3rem;
+    }
+
+    .player-ship-hologram {
+        width: 6rem; /* Very small ship */
+        height: 6rem;
+        border-width: 1px; /* Very thin border */
+    }
+
+    .player-ship-hologram img {
+        width: 4rem; /* Very small image */
+        height: 4rem;
+    }
+
+    .upgrade-cards-container {
+        margin-top: 0.8rem; /* Reduced margin */
+        gap: 0.5rem; /* Reduced gap */
+    }
+
+    .upgrade-card {
+        width: 95%; /* Adjusted width to fill more space */
+        flex: unset; /* Remove flex-basis */
+        padding: 0.4rem; /* Significantly reduced padding */
+        border-width: 1px; /* Very thin border */
+        height: auto; /* Allow height to adjust */
+        margin-bottom: 0.3rem; /* Added margin for spacing */
+    }
+
+    .upgrade-card h3 {
+        font-size: 0.9rem; /* Slightly larger font size */
+    }
+
+    .upgrade-value-description {
+        font-size: 0.75rem; /* Slightly larger font size */
+    }
+
+    .confirm-button {
+        font-size: 0.75rem; /* Significantly smaller font size */
+        padding: 0.5rem 1rem; /* Significantly reduced padding */
+        margin-top: 1rem; /* Reduced margin */
+    }
+
+    .upgrade-menu-content::before, .upgrade-menu-content::after {
+        height: 1px; /* Even thinner scanlines */
+    }
+}
+
+@media (max-width: 375px) {
+    .upgrade-menu-container {
+        padding: 0.1rem;
+    }
+
+    .upgrade-menu-content {
+        padding: 5px;
+        gap: 0.3rem;
+        width: 99%; /* Adjusted width to fill more space */
+        max-width: 99%; /* Adjusted max-width */
+    }
+
+    .upgrade-menu-title {
+        font-size: 1rem;
+    }
+
+    .player-stats-panel {
+        padding: 0.3rem;
+        font-size: 0.6rem;
+        width: 99%; /* Adjusted width to fill more space */
+    }
+
+    .player-stats-panel h2 {
+        font-size: 0.7rem;
+    }
+
+    .player-ship-hologram {
+        width: 5rem;
+        height: 5rem;
+    }
+
+    .player-ship-hologram img {
+        width: 3rem;
+        height: 3rem;
+    }
+
+    .upgrade-card {
+        width: 99%; /* Adjusted width to fill more space */
+        padding: 0.3rem;
+        margin-bottom: 0.2rem; /* Added margin for spacing */
+    }
+
+    .upgrade-card h3 {
+        font-size: 0.8rem; /* Slightly larger font size */
+    }
+
+    .upgrade-value-description {
+        font-size: 0.65rem; /* Slightly larger font size */
+    }
+
+    .confirm-button {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.8rem;
     }
 }

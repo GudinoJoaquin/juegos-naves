@@ -8,13 +8,15 @@ import { BossEnemy } from '../enemies/BossEnemy.js';
 import { ShieldPowerUp, LaserModePowerUp, TankModePowerUp, BoostPowerUp, MovementSpeedPowerUp, FireRatePowerUp, HealthPowerUp } from '../powerups/PowerUp.js';
 
 export class GameLoop {
-    constructor(canvas, inputHandler, assets, updateGameState, updateUpgradeMenuData, playerName) {
+    constructor(canvas, inputHandler, assets, updateGameState, updateUpgradeMenuData, updateHUDData, addHologramEffect, playerName) {
         this.canvas = canvas;
         this.context = canvas.getContext('2d');
         this.inputHandler = inputHandler;
         this.assets = assets;
         this.updateGameState = updateGameState;
         this.updateUpgradeMenuData = updateUpgradeMenuData;
+        this.updateHUDData = updateHUDData; // New callback for HUD data
+        this.addHologramEffect = addHologramEffect; // New callback for hologram effects
 
         this.player = new Player(this.canvas.width / 2 - 25, this.canvas.height - 100, 'Assault', this.assets, playerName);
 
@@ -410,6 +412,21 @@ export class GameLoop {
         }
 
         this.inputHandler.clearPressedKeys(); // Clear pressed keys at the end of update
+
+        // Update HUD data for React component
+        this.updateHUDData({
+            hp: this.player.hp,
+            maxHp: this.player.maxHp,
+            score: this.player.score,
+            level: this.currentLevel,
+            wave: this.currentWave,
+            totalWaves: this.totalWavesInLevel,
+            enemiesLeft: this.enemiesOnScreenCount + this.enemySpawnQueue.length,
+            activePowerUpType: this.player.activePowerUpType,
+            powerUpTimer: this.player.powerUpTimer,
+            bossActive: this.bossActive,
+            playerName: this.player.playerName
+        });
     }
 
     draw() {
@@ -425,38 +442,18 @@ export class GameLoop {
             this.projectiles.forEach(p => p.draw(this.context));
             this.powerUps.forEach(powerUp => powerUp.draw(this.context));
             
-            this.drawHUD();
-        }
-    }
-    
-    drawHUD() {
-        this.context.fillStyle = 'white';
-        this.context.font = '20px Arial';
-        this.context.textAlign = 'left';
-        this.context.fillText(`HP: ${this.player.hp}`, 10, 30);
-        this.context.fillText(`Score: ${this.player.score}`, 10, 60);
-        this.context.fillText(`Level: ${this.currentLevel}`, this.canvas.width / 2 - 50, 30);
-        
-        if (this.player.activePowerUpType) {
-            this.context.fillText(`Power-up: ${this.player.activePowerUpType} (${Math.ceil(this.player.powerUpTimer / 1000)}s)`, this.canvas.width - 250, 60);
-        }
-
-        if (this.bossActive) {
-            this.context.fillText('Boss', this.canvas.width / 2 - 25, 60);
-        } else {
-            this.context.fillText(`Wave: ${this.currentWave}/${this.totalWavesInLevel}`, this.canvas.width / 2 - 50, 60);
-            this.context.fillText(`Enemies Left: ${this.enemiesOnScreenCount + this.enemySpawnQueue.length}`, this.canvas.width - 200, 30);
+            // No longer drawing HUD here, it's handled by React component
         }
     }
 
     generateUpgradeOptions() {
         this.upgradeOptions = [];
         const availableUpgrades = [
-            { type: 'hp', description: 'Aumentar HP Máximo', apply: (player, value) => player.maxHp += value },
-            { type: 'speed', description: 'Aumentar Velocidad de Nave', apply: (player, value) => player.speed += value },
-            { type: 'bulletDamage', description: 'Aumentar Daño de Bala', apply: (player, value) => player.bulletDamage += value },
-            { type: 'fireRate', description: 'Reducir Enfriamiento de Disparo', apply: (player, value) => player.shotCooldown = Math.max(50, player.shotCooldown - value) },
-            { type: 'projectileSpeed', description: 'Aumentar Velocidad de Proyectil', apply: (player, value) => player.projectileSpeed += value },
+            { type: 'hp', shortDescription: 'Aumentar HP', apply: (player, value) => player.maxHp += value },
+            { type: 'speed', shortDescription: 'Velocidad Nave', apply: (player, value) => player.speed += value },
+            { type: 'bulletDamage', shortDescription: 'Daño Bala', apply: (player, value) => player.bulletDamage += value },
+            { type: 'fireRate', shortDescription: 'Cadencia Disparo', apply: (player, value) => player.shotCooldown = Math.max(50, player.shotCooldown - value) },
+            { type: 'projectileSpeed', shortDescription: 'Vel. Proyectil', apply: (player, value) => player.projectileSpeed += value },
         ];
     
         const levelMultiplier = 1 + (this.currentLevel - 1) * 0.1;
@@ -472,33 +469,33 @@ export class GameLoop {
     
         chosenUpgradeTypes.forEach(upgradeType => {
             let value;
-            let description;
+            let valueDescription;
             switch (upgradeType.type) {
                 case 'hp':
                     value = Math.floor(20 * levelMultiplier);
-                    description = `Aumentar HP Máximo en ${value}`;
+                    valueDescription = `+${value} HP Máximo`;
                     break;
                 case 'speed':
                     value = 0.5 * levelMultiplier;
-                    description = `Aumentar Velocidad de Nave en ${value.toFixed(1)}`;
+                    valueDescription = `+${value.toFixed(1)} Velocidad`;
                     break;
                 case 'bulletDamage':
                     value = Math.floor(5 * levelMultiplier);
-                    description = `Aumentar Daño de Bala en ${value}`;
+                    valueDescription = `+${value} Daño`;
                     break;
                 case 'fireRate':
                     value = Math.floor(20 * levelMultiplier);
-                    description = `Reducir Enfriamiento de Disparo en ${value}ms`;
+                    valueDescription = `-${value}ms Enfriamiento`;
                     break;
                 case 'projectileSpeed':
                     value = Math.floor(2 * levelMultiplier);
-                    description = `Aumentar Velocidad de Proyectil en ${value}`;
+                    valueDescription = `+${value} Vel. Proyectil`;
                     break;
                 default:
                     value = 0;
-                    description = 'Mejora Desconocida';
+                    valueDescription = 'Desconocido';
             }
-            this.upgradeOptions.push({ ...upgradeType, value, description });
+            this.upgradeOptions.push({ ...upgradeType, value, valueDescription });
         });
     
         this.selectedUpgradeIndex = 0;
@@ -618,6 +615,13 @@ export class GameLoop {
                 powerUp.apply(this.player, this);
                 powerUp.isCollected = true;
                 this.powerUpsCollected++;
+                // Notify about power-up collection with position
+                this.addHologramEffect(
+                    `+ ${powerUp.constructor.name.replace('PowerUp', '')}`,
+                    powerUp.x + powerUp.width / 2, // Center X of power-up
+                    powerUp.y + powerUp.height / 2, // Center Y of power-up
+                    'powerup'
+                );
             }
         });
     }
@@ -627,7 +631,7 @@ export class GameLoop {
             a.x < b.x + b.width &&
             a.x + a.width > b.x &&
             a.y < b.y + b.height &&
-            a.y + a.height > b.y
+            a.y + b.height > b.y
         );
     }
 }

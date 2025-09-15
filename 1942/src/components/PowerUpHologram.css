@@ -1,0 +1,57 @@
+.powerup-hologram {
+  position: absolute;
+  transform: translate(-50%, -50%); /* Center the hologram on its coordinates */
+  pointer-events: none; /* Allow clicks/interactions to pass through */
+  white-space: nowrap;
+  font-family: 'Arial', sans-serif;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #00ffff; /* Cyan text */
+  text-shadow: 0 0 8px #00ffff, 0 0 15px rgba(0, 255, 255, 0.5);
+  background: rgba(0, 255, 255, 0.1); /* Very subtle transparent background */
+  border: 1px solid rgba(0, 255, 255, 0.4); /* Subtle border */
+  padding: 5px 10px;
+  border-radius: 5px;
+  z-index: 2000;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+.powerup-hologram.enter {
+  animation: hologramEnter 0.5s ease-out forwards;
+}
+
+.powerup-hologram.exit {
+  animation: hologramExit 0.5s ease-in forwards;
+}
+
+@keyframes hologramEnter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 0%); /* Start slightly below */
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%); /* Move to center */
+  }
+}
+
+@keyframes hologramExit {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -100%); /* Move further up while fading */
+  }
+}
+
+/* Specific styles for different power-up types if needed */
+.powerup-hologram.powerup {
+  color: #00ff00; /* Green for general power-ups */
+  text-shadow: 0 0 8px #00ff00, 0 0 15px rgba(0, 255, 0, 0.5);
+  border-color: rgba(0, 255, 0, 0.4);
+  background: rgba(0, 255, 0, 0.1);
+}

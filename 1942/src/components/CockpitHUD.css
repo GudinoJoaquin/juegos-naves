@@ -1,0 +1,105 @@
+.cockpit-hud {
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 40, 0.7);
+  color: #00ffff;
+  font-family: 'Arial', sans-serif;
+  padding: 8px 15px;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 255, 255, 0.5);
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+  display: flex;
+  gap: 15px;
+  z-index: 1000;
+  font-size: 1rem;
+  text-transform: uppercase;
+}
+
+.hud-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hud-label {
+  font-size: 0.7rem;
+  color: rgba(0, 255, 255, 0.7);
+  margin-bottom: 2px;
+}
+
+.hud-value {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #00ffff;
+  text-shadow: 0 0 5px #00ffff;
+}
+
+.player-name {
+  color: #ff00ff;
+  text-shadow: 0 0 5px #ff00ff;
+}
+
+.powerup-active .hud-value {
+  color: #00ff00;
+  text-shadow: 0 0 5px #00ff00;
+}
+
+.boss-active .hud-value {
+  color: #ff0000;
+  text-shadow: 0 0 5px #ff0000;
+}
+
+.active-powerup-hud {
+  position: fixed;
+  bottom: 60px; /* Position above the main HUD */
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(45deg, rgba(0, 255, 255, 0.2), rgba(0, 255, 0, 0.2)); /* Gradient background */
+  color: #00ffff; /* Cyan text for power-up name */
+  font-family: 'Arial', sans-serif;
+  padding: 8px 15px;
+  border-radius: 10px; /* More rounded corners */
+  border: 2px solid #00ffff; /* Cyan border */
+  box-shadow: 0 0 15px #00ffff, 0 0 25px rgba(0, 255, 255, 0.5) inset; /* Enhanced shadow */
+  z-index: 1001;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px #00ffff; /* Cyan text shadow */
+  animation: fadeInSlideUp 0.5s ease-out forwards, pulseGlow 2s infinite alternate; /* Added pulse glow */
+  display: flex; /* Use flexbox for alignment */
+  align-items: center;
+  gap: 10px;
+}
+
+.active-powerup-hud .powerup-text {
+  color: #00ffff; /* Cyan for the power-up name */
+  text-shadow: 0 0 8px #00ffff;
+}
+
+.active-powerup-hud .powerup-timer {
+  color: #ff00ff; /* Pink for the timer */
+  text-shadow: 0 0 8px #ff00ff;
+}
+
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  from {
+    box-shadow: 0 0 15px #00ffff, 0 0 25px rgba(0, 255, 255, 0.5) inset;
+  }
+  to {
+    box-shadow: 0 0 25px #00ffff, 0 0 35px rgba(0, 255, 255, 0.7) inset;
+  }
+}
