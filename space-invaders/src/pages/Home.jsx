@@ -57,7 +57,7 @@ export default function Home() {
     const handleResize = () => {
       const maxWidth = window.innerWidth;
       const maxHeight = window.innerHeight - 80;
-      const ratio = 700 / 480;
+      const ratio = window.innerWidth <= 720 ? 90 / 140 : 700 / 480;
       let width = maxWidth;
       let height = width / ratio;
       if (height > maxHeight) {
